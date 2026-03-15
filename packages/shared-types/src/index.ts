@@ -1,0 +1,29 @@
+export enum ReservationStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  EXPIRED = 'EXPIRED',
+  RELEASED = 'RELEASED',
+}
+
+export enum CheckoutStatus {
+  INITIATED = 'INITIATED',
+  PAYMENT_PENDING = 'PAYMENT_PENDING',
+  PAYMENT_SUCCESS = 'PAYMENT_SUCCESS',
+  PAYMENT_FAILED = 'PAYMENT_FAILED',
+  COMPLETED = 'COMPLETED',
+}
+
+export enum PaymentStatus {
+  CREATED = 'CREATED',
+  PROCESSING = 'PROCESSING',
+  SUCCESS = 'SUCCESS',
+  FAILED = 'FAILED',
+  TIMEOUT = 'TIMEOUT',
+}
+
+export enum OrderStatus {
+  CREATED = 'CREATED',
+  PAID = 'PAID',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
+}
