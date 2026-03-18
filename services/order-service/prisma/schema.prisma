@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Order {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId   String       @unique
+  userId      String
+  totalAmount Int
+  status      String       // CREATED, PAID, FAILED, CANCELLED
+  items       OrderItem[]
+  events      OrderEvent[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model OrderItem {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  orderId   String @db.ObjectId
+  order     Order  @relation(fields: [orderId], references: [id])
+  productId String
+  quantity  Int
+  price     Int
+}
+
+model OrderEvent {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId   String   @db.ObjectId
+  order     Order    @relation(fields: [orderId], references: [id])
+  type      String
+  payload   Json
+  createdAt DateTime @default(now())
+}

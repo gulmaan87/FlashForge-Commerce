@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model InventoryItem {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId String   @unique
+  total     Int
+  reserved  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model InventoryReservation {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId String
+  quantity  Int
+  status    String   // PENDING, CONFIRMED, EXPIRED, RELEASED
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

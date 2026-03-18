@@ -1,8 +1,47 @@
-node_modules
-dist
+# ── Dependencies ──
+node_modules/
+
+# ── Build output ──
+dist/
+build/
+.next/
+*.tsbuildinfo
+
+# ── Environment variables ──
 .env
 .env.*
-coverage
-.DS_Store
-.vscode
+!.env.example
+
+# ── Prisma ──
+**/generated/client/
+
+# ── Testing ──
+coverage/
+*.lcov
+
+# ── Logs ──
 *.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── OS files ──
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ── Editor/IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Docker ──
+docker-compose.override.yml
+
+# ── Misc ──
+.cache/
+.tmp/
+tmp/

@@ -1,5 +1,5 @@
 {
-  "name": "@flashforge/shared-types",
+  "name": "@flashforge/shared-rabbitmq",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -7,6 +7,12 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "echo \"No lint configured yet for shared-types\""
+    "lint": "echo 'No lint configured yet'"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.9"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.8"
   }
 }

@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model CheckoutSession {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String
+  cart          Json
+  totalAmount   Int
+  status        String   // INITIATED, PAYMENT_PENDING, COMPLETED, FAILED
+  reservationId String?
+  paymentId     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model IdempotencyKey {
+  key         String   @id @map("_id")
+  lockedAt    DateTime @default(now())
+  completedAt DateTime?
+  response    Json?
+}

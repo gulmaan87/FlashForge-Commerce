@@ -1,0 +1,2217 @@
+# FlashScale Checkout — Detailed Day-Wise Execution Plan
+
+## Phase 1 to Production-Grade MVP (Senior Full-Stack + DevOps Roadmap)
+
+> **Objective:** Build a high-signal, production-style flash-sale checkout reliability platform that demonstrates concurrency control, async workflows, autoscaling, observability, and performance engineering.
+
+> **Mindset:** We are not building “just an app.”
+> We are building a **reliability-first commerce systems project** that can survive **traffic spikes, payment retries, and inventory contention**.
+
+---
+
+# 0. How to Use This Plan
+
+This roadmap is intentionally designed like a **real engineering sprint plan**.
+
+## Principles
+
+* Build in **vertical slices**, not random components
+* Every day must end with:
+
+  * **something working**
+  * **something testable**
+  * **something documented**
+* Prioritize:
+
+  1. **correctness**
+  2. **resilience**
+  3. **observability**
+  4. **scale**
+  5. **polish**
+
+---
+
+# 1. Total Timeline Overview
+
+## Recommended schedule: **28 days**
+
+This gives the best balance of:
+
+* quality
+* learning
+* resume impact
+* interview depth
+
+### Breakdown
+
+* **Week 1:** Foundation + core correctness
+* **Week 2:** Async orchestration + payment + order flow
+* **Week 3:** Observability + Docker + Kubernetes
+* **Week 4:** Load testing + autoscaling + reporting + polish
+
+---
+
+# 2. Weekly Goals
+
+## Week 1 — Core Domain & Correctness
+
+Build:
+
+* monorepo
+* shared packages
+* Product Service
+* Inventory Service
+* Redis reservation logic
+* TTL cleanup
+* DB schema
+* local correctness validation
+
+**Success criteria:**
+✅ Reservation works
+✅ Stock never goes negative
+✅ Reservation expiry returns stock
+
+---
+
+## Week 2 — Checkout Orchestration
+
+Build:
+
+* Checkout Service
+* RabbitMQ integration
+* Worker Service
+* Payment Service (mock)
+* Order Service
+* Idempotent payment callback handling
+* Retry / DLQ basics
+
+**Success criteria:**
+✅ One successful order flow end-to-end
+✅ Duplicate payment callback does not create duplicate orders
+
+---
+
+## Week 3 — Platformization & Operability
+
+Build:
+
+* Dockerfiles
+* Docker Compose
+* Metrics middleware
+* Prometheus
+* Grafana
+* Loki / logs
+* Kubernetes manifests
+* health / readiness endpoints
+
+**Success criteria:**
+✅ Full stack runs locally in containers
+✅ Metrics visible in Grafana
+✅ Services deploy in local K8s
+
+---
+
+## Week 4 — Scale Proof & Portfolio Readiness
+
+Build:
+
+* k6 load tests
+* autoscaling (HPA)
+* benchmark report
+* screenshots
+* README polish
+* architecture docs
+* failure scenario docs
+* resume bullets
+
+**Success criteria:**
+✅ Load test report with real numbers
+✅ HPA scales under stress
+✅ Repo looks like production-grade engineering work
+
+---
+
+# 3. Pre-Day 1 Preparation (Do this before coding)
+
+## Goal
+
+Prepare your workstation and eliminate friction.
+
+## Install / verify
+
+* Node.js LTS
+* pnpm
+* Docker Desktop
+* PostgreSQL client (optional)
+* Redis CLI (optional)
+* RabbitMQ UI familiarity
+* k6
+* kubectl
+* minikube or kind
+* Helm (optional)
+* Git
+* VS Code + extensions
+
+## VS Code extensions
+
+* ESLint
+* Prettier
+* Prisma
+* Docker
+* Kubernetes
+* YAML
+* Thunder Client / REST Client
+
+## Create root project folder
+
+```bash id="2b1p1n"
+mkdir flashscale-checkout
+cd flashscale-checkout
+git init
+```
+
+## Create Git branches strategy
+
+* `main`
+* `develop`
+* feature branches:
+
+  * `feature/product-service`
+  * `feature/inventory-service`
+  * etc.
+
+### Why
+
+This is a subtle but strong engineering signal.
+
+---
+
+# 4. DAY-BY-DAY PLAN (28 Days)
+
+---
+
+# WEEK 1 — Core Domain & Correctness
+
+---
+
+# Day 1 — Monorepo Foundation + Architecture Setup
+
+## Day objective
+
+Create a **professional monorepo foundation** that will scale cleanly as the project grows.
+
+## Build today
+
+* Root repo structure
+* pnpm workspace
+* root TypeScript config
+* shared package skeletons
+* basic docs folders
+* engineering standards
+
+## Tasks
+
+### 1. Create folder structure
+
+```text id="lycf44"
+flashscale-checkout/
+├── frontend/
+├── services/
+│   ├── product-service/
+│   ├── inventory-service/
+│   ├── checkout-service/
+│   ├── payment-service/
+│   ├── order-service/
+│   └── worker-service/
+├── packages/
+│   ├── shared-types/
+│   ├── shared-config/
+│   ├── shared-logger/
+│   ├── shared-metrics/
+│   └── shared-rabbitmq/
+├── infra/
+│   ├── docker-compose/
+│   ├── kubernetes/
+│   └── terraform/
+├── load-tests/
+│   └── k6/
+├── docs/
+└── .github/workflows/
+```
+
+### 2. Initialize pnpm workspace
+
+Create:
+
+* `package.json`
+* `pnpm-workspace.yaml`
+
+### 3. Add root tooling
+
+Install:
+
+* TypeScript
+* ts-node
+* eslint
+* prettier
+* turbo (optional, strong bonus)
+
+### 4. Create root configs
+
+* `tsconfig.base.json`
+* `.eslintrc.cjs`
+* `.prettierrc`
+* `.gitignore`
+
+### 5. Create docs placeholders
+
+* `README.md`
+* `docs/architecture.md`
+* `docs/api-contracts.md`
+* `docs/failure-scenarios.md`
+
+## Learning goals
+
+Understand:
+
+* Why monorepo > many random repos
+* Shared packages benefits
+* Why architecture docs from Day 1 matter
+
+## End-of-day deliverable
+
+✅ Monorepo scaffold committed
+
+## Commit suggestion
+
+```bash id="nukn91"
+git checkout -b feature/monorepo-foundation
+git add .
+git commit -m "chore: initialize monorepo foundation for FlashScale Checkout"
+```
+
+---
+
+# Day 2 — Shared Packages + Engineering Utilities
+
+## Day objective
+
+Build the **platform primitives** every service will use.
+
+## Build today
+
+* shared-types
+* shared-config
+* shared-logger
+* shared-metrics skeleton
+* env validation patterns
+
+## Tasks
+
+### 1. `packages/shared-types`
+
+Add:
+
+* enums
+* DTOs
+* event types
+* service response types
+
+Examples:
+
+* `ReservationStatus`
+* `CheckoutStatus`
+* `PaymentStatus`
+* `OrderStatus`
+
+### 2. `packages/shared-config`
+
+Add:
+
+* env parser with Zod
+* typed config helper
+* per-service config schema pattern
+
+### 3. `packages/shared-logger`
+
+Use:
+
+* `pino`
+* create a logger factory
+* include:
+
+  * service name
+  * timestamp
+  * JSON output
+
+### 4. `packages/shared-metrics`
+
+Create skeleton:
+
+* Prometheus registry
+* counters
+* histograms
+* middleware placeholders
+
+### 5. Add request correlation strategy
+
+Define:
+
+* `x-request-id`
+* `x-correlation-id`
+
+## Learning goals
+
+Understand:
+
+* why shared infra code improves maintainability
+* why structured logging matters
+* why typed env config is non-negotiable
+
+## End-of-day deliverable
+
+✅ Shared packages bootstrapped
+
+## Commit suggestion
+
+```bash id="n2tmmo"
+git commit -m "feat: add shared packages for types config logger and metrics"
+```
+
+---
+
+# Day 3 — Database Design + Prisma Setup
+
+## Day objective
+
+Create the **source-of-truth data model**.
+
+## Build today
+
+* shared database setup pattern
+* Prisma schema v1
+* migrations
+* seed script
+
+## Tasks
+
+### 1. Choose DB ownership strategy
+
+For MVP:
+
+* each service can share one PostgreSQL DB
+* use logical boundaries via tables
+
+### 2. Set up Prisma in a shared or service-local way
+
+**Recommendation:**
+Start with Prisma inside `inventory-service`, then later abstract if needed.
+
+### 3. Create schema
+
+Tables:
+
+* Product
+* Reservation
+* CheckoutIntent
+* PaymentAttempt
+* Order
+* OrderEvent
+
+### 4. Add constraints
+
+Must include:
+
+* unique `reservationToken`
+* unique `idempotencyKey`
+* unique `paymentRef`
+* unique `gatewayTxnId`
+* unique `checkoutIntentId` in `Order`
+
+### 5. Seed data
+
+Seed:
+
+* 1 product
+* stock = 100
+* flash sale active window
+
+### 6. Write a short data model note in docs
+
+Explain:
+
+* why reservations are separate
+* why order creation is delayed
+* why payment is not source-of-truth for order
+
+## Learning goals
+
+Understand:
+
+* business entities vs transport DTOs
+* why DB uniqueness constraints are part of reliability
+* how schema decisions affect failure recovery
+
+## End-of-day deliverable
+
+✅ DB schema + seed working
+
+## Commit suggestion
+
+```bash id="vnt8vt"
+git commit -m "feat: add initial prisma schema and seed data for core commerce entities"
+```
+
+---
+
+# Day 4 — Product Service (Read Path)
+
+## Day objective
+
+Build the **read-heavy product service**.
+
+## Build today
+
+* Product Service scaffold
+* `GET /products/:id`
+* `GET /products/:id/availability`
+* health endpoint
+* cache placeholder (no Redis yet if needed)
+
+## Tasks
+
+### 1. Scaffold service
+
+Structure:
+
+```text id="nq3k4k"
+services/product-service/
+├── src/
+│   ├── app.ts
+│   ├── server.ts
+│   ├── routes/
+│   ├── controllers/
+│   ├── services/
+│   ├── repositories/
+│   ├── middleware/
+│   └── types/
+```
+
+### 2. Add endpoints
+
+* `GET /health`
+* `GET /ready`
+* `GET /products/:id`
+* `GET /products/:id/availability`
+
+### 3. Add validation
+
+Use:
+
+* Zod
+* validate route params
+
+### 4. Add logging
+
+Log:
+
+* request start/end
+* latency
+* product id
+* cache status (placeholder)
+
+### 5. Add basic metrics middleware
+
+* request counter
+* latency histogram
+
+## Learning goals
+
+Understand:
+
+* clean service layering
+* controller vs service vs repository
+* health vs readiness difference
+
+## End-of-day deliverable
+
+✅ Product Service returns seeded product
+
+## Commit suggestion
+
+```bash id="q63w1v"
+git commit -m "feat: implement product service with product and availability endpoints"
+```
+
+---
+
+# Day 5 — Redis Integration + Product Cache
+
+## Day objective
+
+Turn Product Service into a **cache-first read path**.
+
+## Build today
+
+* Redis client
+* cache wrapper
+* read-through cache
+* cache TTL strategy
+* cache metrics
+
+## Tasks
+
+### 1. Add Redis
+
+Install:
+
+* `ioredis`
+
+### 2. Implement cache helper
+
+Functions:
+
+* `getProductFromCache`
+* `setProductCache`
+* `getAvailabilityCache`
+* `setAvailabilityCache`
+
+### 3. Read-through logic
+
+Flow:
+
+* check cache
+* on miss, fetch DB
+* write cache
+* return
+
+### 4. TTL policy
+
+Suggested:
+
+* product details: 30 sec
+* availability snapshot: 5–10 sec
+
+### 5. Add metrics
+
+Track:
+
+* cache hits
+* cache misses
+* cache hit ratio
+
+### 6. Update logs
+
+Include:
+
+* `cacheHit: true/false`
+
+## Learning goals
+
+Understand:
+
+* why hot reads should be cache-first
+* why availability can be approximate
+* cache invalidation basics
+
+## End-of-day deliverable
+
+✅ Product Service uses Redis cache
+
+## Commit suggestion
+
+```bash id="iyd0n1"
+git commit -m "feat: add redis-backed read-through caching to product service"
+```
+
+---
+
+# Day 6 — Inventory Service Scaffold + Reservation API Design
+
+## Day objective
+
+Start the **most important service** in the system.
+
+## Build today
+
+* Inventory Service scaffold
+* reservation endpoint skeleton
+* reservation domain logic outline
+* reservation validation
+
+## Tasks
+
+### 1. Scaffold Inventory Service
+
+Structure same as Product Service
+
+### 2. Add endpoints
+
+* `GET /health`
+* `GET /ready`
+* `POST /inventory/reserve`
+* `GET /inventory/reservations/:token`
+* `POST /inventory/confirm`
+* `POST /inventory/release`
+
+### 3. Add request validation
+
+Reserve body:
+
+* productId
+* userId
+* quantity
+
+### 4. Add service contract design
+
+Define:
+
+* reserve returns:
+
+  * reservationToken
+  * expiresAt
+  * status
+
+### 5. Write pseudo-code before coding
+
+This is important.
+
+### Reservation pseudocode
+
+```text id="65i5jv"
+1. Validate sale window
+2. Check current available stock
+3. If enough stock:
+   - reserve atomically
+   - create reservation token
+   - store reservation in Redis with TTL
+   - persist reservation in DB
+   - return success
+4. Else:
+   - return insufficient stock
+```
+
+## Learning goals
+
+Understand:
+
+* why writing pseudo-code first reduces bad architecture
+* why inventory is the system’s “correctness boundary”
+
+## End-of-day deliverable
+
+✅ Inventory Service skeleton with contracts defined
+
+## Commit suggestion
+
+```bash id="m3rrsk"
+git commit -m "feat: scaffold inventory service and define reservation api contracts"
+```
+
+---
+
+# Day 7 — Redis Reservation Logic (Core Correctness Day)
+
+## Day objective
+
+Implement the **actual reservation engine**.
+
+## This is one of the most important days of the project.
+
+## Build today
+
+* Redis stock key
+* reservation token generation
+* reservation TTL
+* reserve endpoint working
+* no oversell under basic concurrency
+
+## Tasks
+
+### 1. Seed Redis available stock
+
+On service start or via init script:
+
+* `product:{id}:available = stockAvailable`
+
+### 2. Implement reservation strategy
+
+Start simple:
+
+* use `WATCH / MULTI / EXEC`
+* or use Lua script if comfortable
+
+### 3. Reservation data in Redis
+
+Store:
+
+* `reservation:{token}` JSON
+* TTL = 120 sec
+
+### 4. Persist reservation in DB
+
+Fields:
+
+* token
+* productId
+* userId
+* quantity
+* status = `PENDING`
+* expiresAt
+
+### 5. Test manually
+
+Scenarios:
+
+* reserve 1 unit when stock = 100
+* reserve 100 units
+* reserve 101st should fail
+
+### 6. Write notes in docs
+
+Document:
+
+* why Redis handles fast reservation
+* why DB is still needed
+
+## Learning goals
+
+Understand:
+
+* atomicity under concurrency
+* why oversell prevention matters more than response speed
+* Redis as fast coordination layer
+
+## End-of-day deliverable
+
+✅ Reservation endpoint fully working
+
+## Commit suggestion
+
+```bash id="obm9w9"
+git commit -m "feat: implement redis-backed inventory reservation with ttl and db persistence"
+```
+
+---
+
+# WEEK 2 — Checkout Orchestration + Payment + Orders
+
+---
+
+# Day 8 — Reservation Retrieval + Confirm / Release Flows
+
+## Day objective
+
+Complete the **inventory state machine**.
+
+## Build today
+
+* `GET reservation`
+* `confirm reservation`
+* `release reservation`
+
+## Tasks
+
+### 1. Implement `GET /inventory/reservations/:token`
+
+Return:
+
+* status
+* expiresAt
+* productId
+* quantity
+
+### 2. Implement confirm flow
+
+When called:
+
+* validate reservation exists and active
+* mark DB reservation `CONFIRMED`
+* decrement DB `stockAvailable` atomically
+* keep Redis consistent
+
+### 3. Implement release flow
+
+When called:
+
+* if still pending:
+
+  * increment Redis stock
+  * mark DB `RELEASED`
+
+### 4. Protect against duplicate calls
+
+Confirm and release must be **idempotent**
+
+### 5. Add tests
+
+Scenarios:
+
+* double confirm
+* double release
+* confirm after release
+* release after confirm
+
+## Learning goals
+
+Understand:
+
+* state transitions
+* why all state-changing APIs must be idempotent
+
+## End-of-day deliverable
+
+✅ Inventory lifecycle complete
+
+---
+
+# Day 9 — Reservation Expiry Cleanup Job
+
+## Day objective
+
+Prevent **stuck inventory**.
+
+## Build today
+
+* background cleanup job
+* expired reservation detection
+* automatic stock restoration
+* logs + metrics
+
+## Tasks
+
+### 1. Add scheduled cleanup
+
+Every 15–30 sec:
+
+* query expired pending reservations
+* mark `EXPIRED`
+* restore Redis stock
+
+### 2. Avoid double restoration
+
+Check status before incrementing stock
+
+### 3. Add metrics
+
+* `reservation_expired_total`
+* `reservation_cleanup_runs_total`
+
+### 4. Simulate expiry
+
+Reserve item → wait TTL → verify stock restored
+
+## Learning goals
+
+Understand:
+
+* why background jobs are essential in distributed workflows
+* why TTL alone is not enough without cleanup logic
+
+## End-of-day deliverable
+
+✅ Expired reservations auto-release stock
+
+---
+
+# Day 10 — Checkout Service Scaffold
+
+## Day objective
+
+Introduce **checkout intent** as a separate business concept.
+
+## Build today
+
+* Checkout Service scaffold
+* `POST /checkout`
+* `GET /checkout/:id`
+* validate reservation token
+
+## Tasks
+
+### 1. Scaffold service
+
+Standard structure
+
+### 2. Add `POST /checkout`
+
+Flow:
+
+* validate reservation token with Inventory Service
+* ensure status = `PENDING`
+* create `CheckoutIntent`
+* generate `idempotencyKey`
+* set status `PAYMENT_PENDING`
+
+### 3. Add `GET /checkout/:id`
+
+Return:
+
+* status
+* linked order if exists
+
+### 4. Add service-to-service call pattern
+
+Use internal HTTP call to Inventory Service
+
+## Learning goals
+
+Understand:
+
+* why checkout intent exists separately from order
+* why order should not be created before payment success
+
+## End-of-day deliverable
+
+✅ Checkout intents can be created from reservation
+
+---
+
+# Day 11 — RabbitMQ Setup + Shared Messaging Package
+
+## Day objective
+
+Introduce **async orchestration backbone**.
+
+## Build today
+
+* RabbitMQ local setup
+* shared-rabbitmq package
+* exchange / queue declarations
+* publish helper
+
+## Tasks
+
+### 1. Add RabbitMQ locally
+
+* Docker container or local compose
+
+### 2. Implement `packages/shared-rabbitmq`
+
+Include:
+
+* connection factory
+* channel factory
+* exchange declaration
+* queue binding helper
+* publish helper
+
+### 3. Create exchange
+
+* `flashscale.events`
+
+### 4. Define routing keys
+
+* `checkout.requested.v1`
+* `payment.succeeded.v1`
+* `payment.failed.v1`
+
+### 5. Update Checkout Service
+
+After creating checkout intent:
+
+* publish `checkout.requested.v1`
+
+## Learning goals
+
+Understand:
+
+* why async beats synchronous orchestration under burst load
+* topic exchange basics
+* message contracts
+
+## End-of-day deliverable
+
+✅ Checkout publishes queue event
+
+---
+
+# Day 12 — Worker Service Scaffold + Event Consumption
+
+## Day objective
+
+Build the **workflow orchestrator**.
+
+## Build today
+
+* Worker Service scaffold
+* RabbitMQ consumer
+* consume `checkout.requested.v1`
+* log event processing
+
+## Tasks
+
+### 1. Scaffold worker service
+
+Structure:
+
+* consumer handlers
+* orchestrators
+* retry helpers
+
+### 2. Consume queue
+
+Queue:
+
+* `checkout.processing`
+
+### 3. Parse and validate event
+
+Use shared types
+
+### 4. Add basic orchestration stub
+
+On event:
+
+* log receipt
+* call Payment Service stub (placeholder)
+
+### 5. Add retry skeleton
+
+Wrap handler with retry-safe pattern
+
+## Learning goals
+
+Understand:
+
+* at-least-once delivery
+* why consumers must be idempotent
+* worker as orchestrator vs business owner
+
+## End-of-day deliverable
+
+✅ Worker consumes checkout events
+
+---
+
+# Day 13 — Payment Service Scaffold + Mock Gateway
+
+## Day objective
+
+Build a **realistic payment simulator**.
+
+## Build today
+
+* Payment Service scaffold
+* `POST /payments/initiate`
+* random outcome simulation
+* payment attempt persistence
+
+## Tasks
+
+### 1. Scaffold Payment Service
+
+### 2. Implement `POST /payments/initiate`
+
+Input:
+
+* checkoutIntentId
+* idempotencyKey
+
+### 3. Create payment attempt
+
+Fields:
+
+* paymentRef
+* status `PROCESSING`
+
+### 4. Simulate outcome
+
+Modes:
+
+* success
+* failure
+* timeout
+* delayed success
+
+### 5. Persist attempt
+
+### 6. Return processing response
+
+## Learning goals
+
+Understand:
+
+* why mocked external systems should still simulate failure modes
+* payment as an unstable dependency
+
+## End-of-day deliverable
+
+✅ Payment Service initiates mock payments
+
+---
+
+# Day 14 — Payment Webhook + Idempotency (Critical Reliability Day)
+
+## Day objective
+
+Implement **duplicate callback-safe payment processing**.
+
+## Build today
+
+* `POST /payments/webhook`
+* idempotency keying
+* duplicate callback prevention
+* event publish on success/failure
+
+## Tasks
+
+### 1. Implement webhook endpoint
+
+Accept:
+
+* paymentRef
+* gatewayTxnId
+* status
+* signature (mock)
+
+### 2. Add dedup logic
+
+Check:
+
+* Redis key `payment:callback:{gatewayTxnId}`
+* DB unique `gatewayTxnId`
+
+### 3. If duplicate:
+
+* ACK request
+* log duplicate
+* increment duplicate metric
+* do nothing else
+
+### 4. If first time:
+
+* update payment attempt
+* publish:
+
+  * `payment.succeeded.v1`
+  * or `payment.failed.v1`
+
+### 5. Test duplicate callback manually
+
+Send same callback 2–3 times
+
+## Learning goals
+
+Understand:
+
+* idempotency is one of the strongest system design concepts
+* external systems are messy
+* webhook handling must be safe by default
+
+## End-of-day deliverable
+
+✅ Duplicate callbacks do not create duplicate downstream events
+
+---
+
+# WEEK 3 — Order Flow + Resilience + Observability
+
+---
+
+# Day 15 — Order Service Scaffold
+
+## Day objective
+
+Create the **final commercial truth layer**.
+
+## Build today
+
+* Order Service scaffold
+* `GET /orders/:id`
+* DB create helper
+* order event history table usage
+
+## Tasks
+
+### 1. Scaffold Order Service
+
+### 2. Implement create-order function (internal use)
+
+Inputs:
+
+* checkoutIntentId
+* productId
+* quantity
+* finalAmount
+
+### 3. Enforce idempotency
+
+Unique constraint:
+
+* one order per `checkoutIntentId`
+
+### 4. Implement `GET /orders/:id`
+
+## Learning goals
+
+Understand:
+
+* order is the business truth after payment success
+* order creation must also be idempotent
+
+## End-of-day deliverable
+
+✅ Order Service ready for async creation
+
+---
+
+# Day 16 — Worker Orchestration: Payment Success Path
+
+## Day objective
+
+Complete the **happy path**.
+
+## Build today
+
+Worker consumes `payment.succeeded.v1` and:
+
+* confirms reservation
+* creates order
+* updates checkout status
+
+## Tasks
+
+### 1. Consume `payment.succeeded.v1`
+
+### 2. Call Inventory Service confirm
+
+* ensure idempotent
+
+### 3. Create order via Order Service
+
+### 4. Update checkout status
+
+* `COMPLETED`
+
+### 5. Emit `order.created.v1` (optional)
+
+### 6. Test full happy flow
+
+* reserve → checkout → payment success → order created
+
+## Learning goals
+
+Understand:
+
+* orchestration sequence
+* why order creation should happen after inventory confirm
+
+## End-of-day deliverable
+
+✅ End-to-end successful purchase flow
+
+---
+
+# Day 17 — Worker Orchestration: Payment Failure Path
+
+## Day objective
+
+Complete the **failure path**.
+
+## Build today
+
+Worker consumes `payment.failed.v1` and:
+
+* releases reservation
+* updates checkout status
+* prevents ghost stock lock
+
+## Tasks
+
+### 1. Consume `payment.failed.v1`
+
+### 2. Call Inventory Service release
+
+Reason:
+
+* `PAYMENT_FAILED`
+
+### 3. Update checkout status
+
+* `PAYMENT_FAILED`
+
+### 4. Test:
+
+* reserve → checkout → payment fail → stock restored
+
+## Learning goals
+
+Understand:
+
+* failure path is as important as success path
+* inventory cleanup is critical in commerce systems
+
+## End-of-day deliverable
+
+✅ Failed payments release stock correctly
+
+---
+
+# Day 18 — Retry Logic + DLQ
+
+## Day objective
+
+Make the system **resilient to transient failures**.
+
+## Build today
+
+* retry wrapper
+* max retries
+* exponential backoff
+* DLQ routing
+
+## Tasks
+
+### 1. Add retry policy
+
+* 3 retries
+* 5s / 15s / 30s
+
+### 2. Add DLQ queue
+
+* `flashscale.dlq`
+
+### 3. Route permanent failures to DLQ
+
+### 4. Add DLQ metrics
+
+* `dlq_messages_total`
+
+### 5. Simulate failures
+
+* make Order Service fail temporarily
+* verify retries
+* force permanent fail → DLQ
+
+## Learning goals
+
+Understand:
+
+* transient vs permanent failure
+* poison messages
+* why retry without idempotency is dangerous
+
+## End-of-day deliverable
+
+✅ Retry + DLQ working
+
+---
+
+# Day 19 — HTTP Metrics + Business Metrics Middleware
+
+## Day objective
+
+Make the system **observable by design**.
+
+## Build today
+
+* Prometheus metrics endpoint in every service
+* HTTP metrics
+* business counters
+
+## Tasks
+
+### 1. Add `/metrics` to all services
+
+### 2. Add HTTP metrics middleware
+
+Track:
+
+* requests total
+* latency histogram
+* error count
+
+### 3. Add business metrics
+
+Examples:
+
+* reservations
+* reservation conflicts
+* checkouts started
+* payments success/fail
+* duplicate callbacks
+* orders created
+* retries
+* DLQ messages
+
+### 4. Ensure consistent metric naming
+
+Prefix:
+
+* `flashscale_`
+
+## Learning goals
+
+Understand:
+
+* infra metrics alone are not enough
+* business metrics are what make observability impressive
+
+## End-of-day deliverable
+
+✅ All services expose metrics
+
+---
+
+# Day 20 — Logging Standardization + Correlation IDs
+
+## Day objective
+
+Make logs **debuggable under distributed flow**.
+
+## Build today
+
+* structured JSON logs
+* request IDs
+* correlation IDs
+* propagate IDs across service calls/events
+
+## Tasks
+
+### 1. Standardize logger fields
+
+Include:
+
+* service
+* requestId
+* correlationId
+* checkoutIntentId
+* reservationToken
+* paymentRef
+* eventType
+
+### 2. Propagate headers
+
+* `x-request-id`
+* `x-correlation-id`
+
+### 3. Propagate correlation in events
+
+Include in event payload metadata
+
+### 4. Test end-to-end trace via logs
+
+One checkout should be searchable across all services
+
+## Learning goals
+
+Understand:
+
+* logs without correlation are weak
+* debugging distributed systems requires traceability
+
+## End-of-day deliverable
+
+✅ End-to-end log correlation works
+
+---
+
+# WEEK 4 — Docker + K8s + Load + Portfolio Polish
+
+---
+
+# Day 21 — Dockerfiles for All Services
+
+## Day objective
+
+Containerize everything cleanly.
+
+## Build today
+
+* Dockerfiles for all backend services
+* frontend Dockerfile
+* multi-stage builds where practical
+
+## Tasks
+
+### 1. Backend Dockerfile template
+
+Use:
+
+* `node:lts-alpine`
+* install deps
+* build TS
+* run dist
+
+### 2. Frontend Dockerfile
+
+* build Vite
+* serve with NGINX (recommended)
+
+### 3. Test images locally
+
+Run each image individually
+
+## Learning goals
+
+Understand:
+
+* why consistent image patterns matter
+* how smaller images help CI/CD
+
+## End-of-day deliverable
+
+✅ All services have working Dockerfiles
+
+---
+
+# Day 22 — Docker Compose Full Local Stack
+
+## Day objective
+
+Run the **entire platform locally**.
+
+## Build today
+
+* docker-compose for:
+
+  * postgres
+  * redis
+  * rabbitmq
+  * all services
+  * frontend
+
+## Tasks
+
+### 1. Create `infra/docker-compose/docker-compose.yml`
+
+### 2. Define service dependencies
+
+Use:
+
+* health checks
+* restart policies
+
+### 3. Add environment variables
+
+### 4. Validate:
+
+* full stack boots
+* product page loads
+* reserve works
+* checkout flow works
+
+## Learning goals
+
+Understand:
+
+* local platform orchestration
+* health checks in compose
+* service startup order issues
+
+## End-of-day deliverable
+
+✅ Full app runs in Docker Compose
+
+---
+
+# Day 23 — Prometheus + Grafana + Loki Stack
+
+## Day objective
+
+Turn the project into a **real operations platform**.
+
+## Build today
+
+* Prometheus config
+* Grafana setup
+* Loki + Promtail
+* scrape targets
+
+## Tasks
+
+### 1. Add Prometheus
+
+Scrape:
+
+* all service `/metrics`
+
+### 2. Add Grafana
+
+Import or build dashboards
+
+### 3. Add Loki + Promtail
+
+Ship container logs
+
+### 4. Build at least 2 dashboards
+
+* Flash Sale Health
+* Inventory Integrity
+
+## Learning goals
+
+Understand:
+
+* metrics vs logs
+* what dashboards recruiters actually care about
+
+## End-of-day deliverable
+
+✅ Metrics + logs visible in dashboards
+
+---
+
+# Day 24 — Kubernetes Manifests (Core Services)
+
+## Day objective
+
+Deploy the system to **local Kubernetes**.
+
+## Build today
+
+* namespace
+* configmaps
+* secrets
+* deployments
+* services
+* ingress basics
+
+## Tasks
+
+### 1. Create namespace
+
+* `flashscale`
+
+### 2. Add manifests for:
+
+* product-service
+* inventory-service
+* checkout-service
+* payment-service
+* order-service
+* worker-service
+* frontend
+
+### 3. Add probes
+
+* liveness
+* readiness
+
+### 4. Deploy on Minikube / Kind
+
+## Learning goals
+
+Understand:
+
+* K8s primitives
+* why readiness matters more than just “pod running”
+
+## End-of-day deliverable
+
+✅ Services running in K8s
+
+---
+
+# Day 25 — HPA + Scale Validation
+
+## Day objective
+
+Demonstrate **autoscaling under pressure**.
+
+## Build today
+
+* HPA for key services
+* resource requests/limits
+* validate scale-up behavior
+
+## Tasks
+
+### 1. Add resource requests/limits
+
+For:
+
+* product-service
+* inventory-service
+* checkout-service
+* payment-service
+* worker-service
+
+### 2. Add HPA
+
+Start with:
+
+* min 2
+* max 8–10
+* CPU target 60%
+
+### 3. Run light stress test
+
+Use:
+
+* local scripts or early k6
+
+### 4. Capture evidence
+
+* `kubectl get hpa`
+* pod scaling screenshots
+
+## Learning goals
+
+Understand:
+
+* why autoscaling without requests/limits is weak
+* HPA basics
+* burst behavior
+
+## End-of-day deliverable
+
+✅ HPA scales under synthetic load
+
+---
+
+# Day 26 — k6 Load Testing (Core Proof Day)
+
+## Day objective
+
+Generate **real performance proof**.
+
+## Build today
+
+* browse test
+* reserve contention test
+* checkout spike test
+* duplicate callback test
+
+## Tasks
+
+### 1. Create `browse.js`
+
+* 5k virtual users hitting product page
+
+### 2. Create `reserve.js`
+
+* 1k users competing for 100 units
+
+### 3. Create `checkout-spike.js`
+
+* 2k checkout requests in 30 sec
+
+### 4. Create `duplicate-callback.js`
+
+* same payment callback repeated
+
+### 5. Record metrics
+
+Capture:
+
+* p95 latency
+* error rate
+* success counts
+* oversell count (must be 0)
+* pod scaling behavior
+
+## Learning goals
+
+Understand:
+
+* how to test system claims with evidence
+* why concurrency testing is different from unit tests
+
+## End-of-day deliverable
+
+✅ Load test data collected
+
+---
+
+# Day 27 — Benchmark Report + README + Docs
+
+## Day objective
+
+Convert engineering work into **shortlisting-grade presentation**.
+
+## Build today
+
+* benchmark report
+* architecture diagram
+* failure scenarios doc
+* polished README
+* screenshots
+
+## Tasks
+
+### 1. Create `docs/scaling-report.md`
+
+Include:
+
+* test scenarios
+* before/after results
+* p95 latency
+* error rate
+* HPA scaling evidence
+* 0 oversell proof
+
+### 2. Update `README.md`
+
+Must include:
+
+* project summary
+* architecture diagram
+* stack
+* local run steps
+* K8s run steps
+* dashboards screenshots
+* benchmark highlights
+* known tradeoffs
+
+### 3. Create `docs/failure-scenarios.md`
+
+Document:
+
+* duplicate callback
+* order service failure
+* reservation expiry
+* worker crash
+* Redis restart recovery strategy
+
+## Learning goals
+
+Understand:
+
+* presentation is part of engineering impact
+* strong documentation changes how recruiters perceive the project
+
+## End-of-day deliverable
+
+✅ Repo now looks professional
+
+---
+
+# Day 28 — Final Hardening + Interview Prep Day
+
+## Day objective
+
+Make the project **interview-ready**, not just “done”.
+
+## Build today
+
+* bug fixes
+* code cleanup
+* test edge cases
+* prepare talking points
+* final resume bullets
+
+## Tasks
+
+### 1. Run full end-to-end smoke test
+
+Scenarios:
+
+* happy path
+* payment fail
+* duplicate callback
+* reservation expiry
+* oversell attempt
+
+### 2. Create interview notes
+
+Prepare answers for:
+
+* Why Redis for reservations?
+* Why not synchronous checkout?
+* How do you prevent oversell?
+* What happens if payment succeeds but order creation fails?
+* Why HPA?
+* Which metrics matter most?
+* What would you improve in v2?
+
+### 3. Add final resume bullets
+
+Put in:
+
+* resume
+* LinkedIn
+* GitHub repo description
+
+### 4. Tag release
+
+```bash id="zjsh1k"
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+## Learning goals
+
+Understand:
+
+* “done” is not enough
+* “explainable and defendable” is what wins interviews
+
+## End-of-day deliverable
+
+✅ Project is portfolio-ready + interview-ready
+
+---
+
+# 5. Daily Operating Routine (Do This Every Day)
+
+This is how senior engineers work.
+Use this **daily operating checklist**.
+
+## Before coding
+
+* Re-read today’s objective
+* Define **success criteria**
+* Write 5–10 lines of pseudo-code for critical logic
+
+## During coding
+
+* Build one vertical slice at a time
+* Test manually after each major function
+* Log meaningful events
+* Keep commits focused
+
+## After coding
+
+* Update docs
+* Note 3 learnings
+* Note 1 bug / risk / tradeoff
+* Commit cleanly
+
+---
+
+# 6. Daily Deliverables Template
+
+Use this template in your notes or `docs/dev-log.md`.
+
+```md id="zz7c4j"
+## Day X
+### Objective
+### What I built
+### What works now
+### What broke
+### Key learning
+### Tradeoff / design decision
+### Tomorrow’s starting point
+```
+
+This is amazing for:
+
+* interview recall
+* LinkedIn post later
+* project confidence
+
+---
+
+# 7. Testing Strategy (What to test each week)
+
+## Week 1
+
+* reservation success
+* insufficient stock
+* reservation expiry
+* double release protection
+
+## Week 2
+
+* checkout creation
+* payment success
+* payment failure
+* duplicate callbacks
+* order creation idempotency
+
+## Week 3
+
+* service health endpoints
+* metrics exposure
+* Docker Compose stability
+* K8s readiness
+
+## Week 4
+
+* browse spike
+* reserve contention
+* checkout burst
+* autoscaling
+* full flow under stress
+
+---
+
+# 8. Must-Keep Learning Notes (Very Important)
+
+During the project, maintain a file:
+
+* `docs/engineering-decisions.md`
+
+## Record decisions like:
+
+* Why Redis for reservation instead of DB row lock only
+* Why queue-based checkout instead of synchronous payment + order
+* Why idempotency key strategy
+* Why one DB for MVP
+* Why HPA on CPU first
+* Why approximate stock display is acceptable
+
+This file becomes:
+
+* interview gold
+* architecture maturity proof
+
+---
+
+# 9. What Will Make This Project Look “Senior”
+
+## Must-have signals
+
+* Monorepo with shared packages
+* Strong service boundaries
+* Typed contracts
+* Idempotency
+* Retry + DLQ
+* Structured logs
+* Business metrics
+* HPA
+* k6 benchmark report
+* Clear docs with tradeoffs
+
+## Avoid
+
+* overbuilding UI
+* spending days on styling
+* adding random features
+* no metrics
+* no docs
+* no benchmark proof
+
+---
+
+# 10. Recommended Stretch Goals (Only After Core Is Strong)
+
+If the 28-day plan finishes well, add these later:
+
+## Stretch Goal 1 — OpenTelemetry + Jaeger
+
+Adds tracing depth
+
+## Stretch Goal 2 — Terraform + AWS EKS
+
+Makes it even stronger for DevOps roles
+
+## Stretch Goal 3 — Helm charts
+
+Stronger platform maturity
+
+## Stretch Goal 4 — Webhook signature validation
+
+Nice reliability/security bonus
+
+## Stretch Goal 5 — DLQ replay tool
+
+Very impressive operational feature
+
+---
+
+# 11. Best Weekly Reflection Routine
+
+At the end of each week, ask yourself:
+
+## Week 1
+
+* Can I explain oversell prevention clearly?
+
+## Week 2
+
+* Can I explain why duplicate callbacks are dangerous?
+
+## Week 3
+
+* Can I explain what metrics matter in commerce systems?
+
+## Week 4
+
+* Can I explain the benchmark results and scaling behavior?
+
+If the answer is “no”, revisit before moving on.
+
+---
+
+# 12. Final Interview Positioning
+
+Do **not** say:
+
+> “I built an e-commerce website.”
+
+Say:
+
+> “I built a reliability-focused flash-sale checkout platform designed for high-concurrency commerce events. It uses Redis-based TTL reservations to prevent oversell, RabbitMQ for async checkout orchestration, idempotent payment webhook handling to survive duplicate callbacks, and Kubernetes autoscaling with Prometheus/Grafana to maintain performance under burst traffic.”
+
+That is **the difference between average and standout**.
+
+---
+
+# 13. Final Success Checklist
+
+Before calling the project “done”, ensure all are true:
+
+* [ ] Product page cached via Redis
+* [ ] Reservation uses TTL and prevents oversell
+* [ ] Expired reservations restore stock
+* [ ] Checkout intent created before payment
+* [ ] RabbitMQ async flow works
+* [ ] Payment webhook is idempotent
+* [ ] Order creation is idempotent
+* [ ] Retry + DLQ implemented
+* [ ] Metrics exposed on all services
+* [ ] Grafana dashboards built
+* [ ] Logs correlated across services
+* [ ] Docker Compose full stack works
+* [ ] K8s manifests deploy
+* [ ] HPA scales under load
+* [ ] k6 results captured
+* [ ] README polished
+* [ ] Scaling report written
+* [ ] Failure scenarios documented
+* [ ] Resume bullets updated
+
+---
+
+# 14. Best Next File After This
+
+After this plan, create:
+
+## `DAY_1_SETUP_GUIDE.md`
+
+This should include:
+
+* exact commands
+* exact package.json files
+* exact folder-by-folder setup
+* exact TypeScript configs
+* exact shared package bootstrapping
+
+That will let you start **immediately without friction**.
+
+---
+
+# 15. Final Strategic Advice
+
+This project will impress recruiters **only if it looks intentional**.
+
+That means:
+
+* **Strong architecture**
+* **Clear engineering decisions**
+* **Measured results**
+* **Production-like tradeoffs**
+* **Good documentation**
+* **Confident explanation**
+
+This is not about building the most features.
+This is about building the **right system** and explaining it like an engineer who understands **scale, reliability, and business impact**.
+
+---
+
+# 16. Final Positioning Statement
+
+> **FlashScale Checkout is a production-style flash-sale reliability platform built to demonstrate concurrency control, async workflow design, autoscaling, observability, and failure recovery in high-demand commerce systems.**
+
+That is the line you should anchor around in:
+
+* GitHub
+* README
+* Resume
+* LinkedIn
+* Interviews
+
+---

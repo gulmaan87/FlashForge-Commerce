@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model PaymentIntent {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId String   @unique
+  amount    Int
+  status    String   // CREATED, PROCESSING, SUCCESS, FAILED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PaymentCallback {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  paymentId String
+  payload   Json
+  createdAt DateTime @default(now())
+}

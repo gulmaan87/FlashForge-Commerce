@@ -1,0 +1,22 @@
+{
+  "name": "@flashforge/shared-logger",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "echo 'No lint configured yet'"
+  },
+  "dependencies": {
+    "pino": "^9.6.0",
+    "pino-http": "^11.0.0",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/pino-http": "^6.1.0",
+    "@types/uuid": "^11.0.0"
+  }
+}

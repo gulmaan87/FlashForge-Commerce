@@ -1,5 +1,5 @@
 {
-  "name": "@flashforge/shared-config",
+  "name": "@flashforge/shared-types",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -7,6 +7,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "echo \"No lint configured yet for shared-config\""
-  }
+    "lint": "echo 'No lint configured yet'"
+  },
+  "dependencies": {}
 }
