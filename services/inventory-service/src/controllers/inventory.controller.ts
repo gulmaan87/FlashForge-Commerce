@@ -55,6 +55,9 @@ export class InventoryController {
       if (error.message === 'Insufficient stock') {
         return res.status(409).json({ success: false, error: { code: 'INSUFFICIENT_STOCK', message: 'Not enough stock available' } });
       }
+      if (error.message === 'Item not found') {
+        return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'No inventory record found for this product' } });
+      }
       res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Failed to reserve inventory' } });
     }
   }

@@ -21,15 +21,15 @@ export class InventoryRepository {
       const item = await tx.inventoryItem.findUnique({
         where: { productId: data.productId }
       });
-      if (!item) throw new Error('Item not found');
-      
-      const available = item.total - item.reserved;
+
+      // Treat a missing inventory record as zero stock — give a clear 409 rather than a 500
+      const available = item ? item.total - item.reserved : 0;
       if (available < data.quantity) {
         throw new Error('Insufficient stock');
       }
 
       await tx.inventoryItem.update({
-        where: { id: item.id },
+        where: { id: item!.id },
         data: { reserved: { increment: data.quantity } },
       });
 
