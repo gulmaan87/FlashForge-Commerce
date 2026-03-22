@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+.git
+.gitignore
+*.md
+load-tests
+docs
+infra/k8s

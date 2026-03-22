@@ -1,0 +1,40 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # ──────────────────────────── Self-monitoring ─────────────────────────────
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # ──────────────────────────── Microservices ───────────────────────────────
+  - job_name: 'product-service'
+    static_configs:
+      - targets: ['product-service:4001']
+    metrics_path: /metrics
+
+  - job_name: 'inventory-service'
+    static_configs:
+      - targets: ['inventory-service:4002']
+    metrics_path: /metrics
+
+  - job_name: 'checkout-service'
+    static_configs:
+      - targets: ['checkout-service:4003']
+    metrics_path: /metrics
+
+  - job_name: 'payment-service'
+    static_configs:
+      - targets: ['payment-service:4004']
+    metrics_path: /metrics
+
+  - job_name: 'order-service'
+    static_configs:
+      - targets: ['order-service:4005']
+    metrics_path: /metrics
+
+  - job_name: 'worker-service'
+    static_configs:
+      - targets: ['worker-service:4006']
+    metrics_path: /metrics

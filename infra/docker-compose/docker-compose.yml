@@ -1,7 +1,31 @@
 version: '3.8'
 
+# ─────────────────────────────────────────────────────────────────────────────
+# FlashForge Commerce — Full Docker Compose Stack
+# Boots: infrastructure + all 6 microservices + Next.js frontend
+# + Prometheus + Grafana observability
+#
+# Usage:
+#   docker compose -f infra/docker-compose/docker-compose.yml up --build
+# ─────────────────────────────────────────────────────────────────────────────
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  networks:
+    - flashforge
+
+x-app-env: &app-env
+  DATABASE_URL: postgresql://user:password@postgres:5432/flashforge?schema=public
+  REDIS_URL: redis://redis:6379
+  RABBITMQ_URL: amqp://user:password@rabbitmq:5672
+  LOG_LEVEL: info
+  NODE_ENV: production
+
 services:
+  # ───────────────────────────── Infrastructure ─────────────────────────────
+
   postgres:
+    <<: *service-defaults
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: user
@@ -13,11 +37,12 @@ services:
       test: ["CMD-SHELL", "pg_isready -U user -d flashforge"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
+    <<: *service-defaults
     image: redis:7-alpine
     ports:
       - "6379:6379"
@@ -25,21 +50,215 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   rabbitmq:
+    <<: *service-defaults
     image: rabbitmq:3-management-alpine
     environment:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
     ports:
       - "5672:5672"
-      - "15672:15672"
+      - "15672:15672"   # Management UI
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # ───────────────────────────── Microservices ──────────────────────────────
+
+  product-service:
+    <<: *service-defaults
+    build:
+      context: ../../
+      dockerfile: services/product-service/Dockerfile
+    environment:
+      <<: *app-env
+      PORT: 4001
+    ports:
+      - "4001:4001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4001/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  inventory-service:
+    <<: *service-defaults
+    build:
+      context: ../../
+      dockerfile: services/inventory-service/Dockerfile
+    environment:
+      <<: *app-env
+      PORT: 4002
+    ports:
+      - "4002:4002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4002/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  checkout-service:
+    <<: *service-defaults
+    build:
+      context: ../../
+      dockerfile: services/checkout-service/Dockerfile
+    environment:
+      <<: *app-env
+      PORT: 4003
+      INVENTORY_SERVICE_URL: http://inventory-service:4002
+      PAYMENT_SERVICE_URL: http://payment-service:4004
+    ports:
+      - "4003:4003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      inventory-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4003/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  payment-service:
+    <<: *service-defaults
+    build:
+      context: ../../
+      dockerfile: services/payment-service/Dockerfile
+    environment:
+      <<: *app-env
+      PORT: 4004
+    ports:
+      - "4004:4004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4004/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  order-service:
+    <<: *service-defaults
+    build:
+      context: ../../
+      dockerfile: services/order-service/Dockerfile
+    environment:
+      <<: *app-env
+      PORT: 4005
+    ports:
+      - "4005:4005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4005/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  worker-service:
+    <<: *service-defaults
+    build:
+      context: ../../
+      dockerfile: services/worker-service/Dockerfile
+    environment:
+      <<: *app-env
+      PORT: 4006
+      ORDER_SERVICE_URL: http://order-service:4005
+      INVENTORY_SERVICE_URL: http://inventory-service:4002
+    ports:
+      - "4006:4006"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      inventory-service:
+        condition: service_healthy
+
+  # ───────────────────────────── Frontend ───────────────────────────────────
+
+  frontend:
+    <<: *service-defaults
+    build:
+      context: ../../
+      dockerfile: frontend/Dockerfile
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_PRODUCT_SERVICE_URL: http://localhost:4001
+      NEXT_PUBLIC_CHECKOUT_SERVICE_URL: http://localhost:4003
+      NEXT_PUBLIC_ORDER_SERVICE_URL: http://localhost:4005
+    ports:
+      - "3000:3000"
+    depends_on:
+      product-service:
+        condition: service_healthy
+      checkout-service:
+        condition: service_healthy
+
+  # ───────────────────────────── Observability ──────────────────────────────
+
+  prometheus:
+    <<: *service-defaults
+    image: prom/prometheus:latest
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+      - --web.enable-lifecycle
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+
+  grafana:
+    <<: *service-defaults
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: ""
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+
+networks:
+  flashforge:
+    driver: bridge
+
 volumes:
   postgres_data:
+  rabbitmq_data:
+  prometheus_data:
+  grafana_data:

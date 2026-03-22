@@ -41,6 +41,20 @@ Desktop.ini
 # ── Docker ──
 docker-compose.override.yml
 
+# ── Terraform ──
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+terraform.tfvars        # contains secrets — NEVER commit
+
 # ── Misc ──
 .cache/
 .tmp/

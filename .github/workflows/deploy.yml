@@ -1,0 +1,97 @@
+name: Build & Deploy to ECS
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_PREFIX: flashforge-prod
+  ECS_CLUSTER: flashforge-prod-cluster
+
+jobs:
+  deploy:
+    name: Build, push, and deploy ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - service: product-service
+            context: services/product-service
+            port: 4001
+          - service: inventory-service
+            context: services/inventory-service
+            port: 4002
+          - service: checkout-service
+            context: services/checkout-service
+            port: 4003
+          - service: payment-service
+            context: services/payment-service
+            port: 4004
+          - service: order-service
+            context: services/order-service
+            port: 4005
+          - service: worker-service
+            context: services/worker-service
+            port: 4006
+          - service: frontend
+            context: frontend
+            port: 3000
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: meta
+        run: echo "tag=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_PREFIX }}/${{ matrix.service }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: ${{ steps.meta.outputs.tag }}
+
+      - name: Update ECS service with new image
+        run: |
+          # Get current task definition
+          TASK_DEF=$(aws ecs describe-task-definition \
+            --task-definition flashforge-prod-${{ matrix.service }} \
+            --query taskDefinition)
+
+          # Update container image in task definition
+          NEW_TASK_DEF=$(echo $TASK_DEF | jq \
+            --arg IMAGE "${{ steps.meta.outputs.tag }}" \
+            '.containerDefinitions[0].image = $IMAGE |
+             del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
+
+          # Register new task definition revision
+          NEW_ARN=$(aws ecs register-task-definition \
+            --cli-input-json "$NEW_TASK_DEF" \
+            --query "taskDefinition.taskDefinitionArn" \
+            --output text)
+
+          # Update ECS service
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service flashforge-prod-${{ matrix.service }} \
+            --task-definition "$NEW_ARN" \
+            --force-new-deployment
+
+      - name: Wait for service to be stable
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services flashforge-prod-${{ matrix.service }}
