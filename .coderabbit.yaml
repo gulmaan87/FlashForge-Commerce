@@ -1,0 +1,82 @@
+# CodeRabbit configuration for FlashForge Commerce
+# Docs: https://docs.coderabbit.ai/getting-started/configure-coderabbit
+
+# ── Review settings ───────────────────────────────────────────────────────────
+reviews:
+  profile: chill         # "chill" = fewer nits | "assertive" = strict
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+
+  # Auto-review on every PR
+  auto_review:
+    enabled: true
+    drafts: false         # skip draft PRs
+    base_branches:
+      - master
+      - main
+
+  # Which paths to focus on most
+  path_instructions:
+    - path: "services/**"
+      instructions: |
+        This is a Node.js/Express microservices backend.
+        Check for: async/await error handling, missing try-catch, unhandled promise rejections,
+        MongoDB injection risks, RabbitMQ publish/consume error handling,
+        environment variable usage (should use process.env, never hardcoded),
+        and proper HTTP status codes.
+
+    - path: "frontend/**"
+      instructions: |
+        This is a Next.js 14+ App Router project with TypeScript and Tailwind CSS.
+        Check for: Server Component vs Client Component split, missing Suspense boundaries,
+        unoptimized images (use next/image), accessibility (alt text, ARIA),
+        TypeScript strict mode compliance, and unused imports.
+
+    - path: "infra/terraform/**"
+      instructions: |
+        This is Terraform (AWS) for ECS Fargate, ALB, ECR, and Secrets Manager.
+        Check for: hardcoded credentials or ARNs, overly permissive IAM policies (least-privilege),
+        missing encryption settings, insecure security group rules (0.0.0.0/0 where not needed),
+        and resource naming consistency.
+
+    - path: ".github/workflows/**"
+      instructions: |
+        GitHub Actions CI/CD workflows.
+        Check for: secret injection safety, pinned action versions (not @main),
+        missing permissions declarations, and unnecessary privilege escalation.
+
+    - path: "load-tests/**"
+      instructions: |
+        k6 load test scripts. Check for realistic thresholds, proper teardown, and
+        whether error rates and p95 latency targets are appropriate for the service.
+
+  # Paths to skip entirely
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/.next/**"
+    - "!**/dist/**"
+    - "!**/*.lock"
+    - "!**/pnpm-lock.yaml"
+    - "!**/.terraform/**"
+    - "!**/terraform.tfstate*"
+    - "!**/*.tfvars"          # never review secrets files
+
+# ── Chat settings (comment with @coderabbitai) ────────────────────────────────
+chat:
+  auto_reply: true
+
+# ── Knowledge base (project-specific context) ────────────────────────────────
+knowledge_base:
+  opt_out: false
+  learnings:
+    scope: auto
+
+# ── Language-specific linting hints ──────────────────────────────────────────
+language:
+  typescript:
+    strict: true           # flag any-typed values
+  javascript:
+    strict: false
