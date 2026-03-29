@@ -21,7 +21,8 @@ RUN pnpm --filter @flashforge/shared-types build
 RUN pnpm --filter @flashforge/shared-logger build
 RUN pnpm --filter @flashforge/shared-metrics build
 RUN pnpm --filter @flashforge/shared-rabbitmq build
-RUN pnpm --filter @flashforge/order-service exec sh -c 'cd /app/services/order-service && npx prisma generate'
+
+RUN cd /app/services/order-service && npx prisma generate
 RUN pnpm --filter @flashforge/order-service run build
 
 FROM node:20-alpine AS runner
@@ -30,8 +31,9 @@ ENV NODE_ENV=production
 
 COPY --from=builder /app/node_modules       ./node_modules
 COPY --from=builder /app/packages           ./packages
-COPY --from=builder /app/services/order-service/dist         ./services/order-service/dist
-COPY --from=builder /app/services/order-service/package.json ./services/order-service/package.json
+COPY --from=builder /app/services/order-service/dist            ./services/order-service/dist
+COPY --from=builder /app/services/order-service/src/generated   ./services/order-service/src/generated
+COPY --from=builder /app/services/order-service/package.json    ./services/order-service/package.json
 
 WORKDIR /app/services/order-service
 EXPOSE 4005

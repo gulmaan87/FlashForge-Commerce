@@ -21,7 +21,8 @@ RUN pnpm --filter @flashforge/shared-types build
 RUN pnpm --filter @flashforge/shared-logger build
 RUN pnpm --filter @flashforge/shared-metrics build
 RUN pnpm --filter @flashforge/shared-rabbitmq build
-RUN pnpm --filter @flashforge/payment-service exec sh -c 'cd /app/services/payment-service && npx prisma generate'
+
+RUN cd /app/services/payment-service && npx prisma generate
 RUN pnpm --filter @flashforge/payment-service run build
 
 FROM node:20-alpine AS runner
@@ -30,8 +31,9 @@ ENV NODE_ENV=production
 
 COPY --from=builder /app/node_modules       ./node_modules
 COPY --from=builder /app/packages           ./packages
-COPY --from=builder /app/services/payment-service/dist         ./services/payment-service/dist
-COPY --from=builder /app/services/payment-service/package.json ./services/payment-service/package.json
+COPY --from=builder /app/services/payment-service/dist            ./services/payment-service/dist
+COPY --from=builder /app/services/payment-service/src/generated   ./services/payment-service/src/generated
+COPY --from=builder /app/services/payment-service/package.json    ./services/payment-service/package.json
 
 WORKDIR /app/services/payment-service
 EXPOSE 4004

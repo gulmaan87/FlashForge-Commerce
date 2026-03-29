@@ -20,7 +20,8 @@ COPY services/inventory-service/ ./services/inventory-service/
 RUN pnpm --filter @flashforge/shared-types build
 RUN pnpm --filter @flashforge/shared-logger build
 RUN pnpm --filter @flashforge/shared-metrics build
-RUN pnpm --filter @flashforge/inventory-service exec sh -c 'cd /app/services/inventory-service && npx prisma generate'
+
+RUN cd /app/services/inventory-service && npx prisma generate
 RUN pnpm --filter @flashforge/inventory-service run build
 
 FROM node:20-alpine AS runner
@@ -29,8 +30,9 @@ ENV NODE_ENV=production
 
 COPY --from=builder /app/node_modules       ./node_modules
 COPY --from=builder /app/packages           ./packages
-COPY --from=builder /app/services/inventory-service/dist         ./services/inventory-service/dist
-COPY --from=builder /app/services/inventory-service/package.json ./services/inventory-service/package.json
+COPY --from=builder /app/services/inventory-service/dist            ./services/inventory-service/dist
+COPY --from=builder /app/services/inventory-service/src/generated   ./services/inventory-service/src/generated
+COPY --from=builder /app/services/inventory-service/package.json    ./services/inventory-service/package.json
 
 WORKDIR /app/services/inventory-service
 EXPOSE 4002

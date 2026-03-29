@@ -20,7 +20,9 @@ COPY services/worker-service/ ./services/worker-service/
 RUN pnpm --filter @flashforge/shared-types build
 RUN pnpm --filter @flashforge/shared-logger build
 RUN pnpm --filter @flashforge/shared-metrics build
+RUN pnpm --filter @flashforge/shared-config build
 RUN pnpm --filter @flashforge/shared-rabbitmq build
+
 RUN pnpm --filter @flashforge/worker-service run build
 
 FROM node:20-alpine AS runner
