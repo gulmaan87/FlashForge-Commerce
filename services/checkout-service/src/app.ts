@@ -6,17 +6,50 @@ import { metricsMiddleware, getMetrics } from '@flashforge/shared-metrics';
 
 const logger = createLogger('checkout-service');
 
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+// Default: allow only same-origin in production; set ALLOWED_ORIGINS to a
+// comma-separated list for explicit access (e.g. the Next.js storefront).
+// `origin: true` (mirror the request origin) is intentionally REMOVED because
+// it effectively disables CORS protection.
+const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
 const app: express.Application = express();
-app.use(cors({ origin: true, credentials: true }));
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow server-to-server requests (no Origin header)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
+    credentials: true,
+  }),
+);
+
 app.use(express.json());
 app.use(createRequestLogger(logger));
 app.use(metricsMiddleware());
 
+// ─── Observability routes ──────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok', service: 'checkout-service' });
 });
 
-app.get('/metrics', async (_req, res) => {
+// /metrics is protected by a bearer token so Prometheus can scrape it but
+// arbitrary internet users cannot enumerate internal counters.
+app.get('/metrics', async (req: Request, res: Response) => {
+  const expectedToken = process.env.METRICS_TOKEN;
+  if (expectedToken) {
+    const auth = req.headers['authorization'] ?? '';
+    if (auth !== `Bearer ${expectedToken}`) {
+      res.status(401).send('Unauthorized');
+      return;
+    }
+  }
   try {
     const metrics = await getMetrics();
     res.setHeader('Content-Type', 'text/plain');
@@ -32,6 +65,7 @@ app.get('/ready', (_req, res) => {
 
 app.use('/api/checkout', checkoutRoutes);
 
+// ─── Global error handler ──────────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   logger.error(err, 'Unhandled error in request');

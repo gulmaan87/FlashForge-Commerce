@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import app from './app';
 import { createLogger } from '@flashforge/shared-logger';
 import { startWorkers } from './workers';

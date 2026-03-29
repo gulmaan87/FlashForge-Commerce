@@ -10,7 +10,8 @@
     "lint": "echo 'No lint configured yet'"
   },
   "dependencies": {
-    "amqplib": "^0.10.9"
+    "amqplib": "^0.10.9",
+    "@flashforge/shared-logger": "workspace:*"
   },
   "devDependencies": {
     "@types/amqplib": "^0.10.8"

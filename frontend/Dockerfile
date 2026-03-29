@@ -1,40 +1,44 @@
-# ── Stage 1: dependencies ─────────────────────────────────────────────────────
+# ── Stage 1: install deps ──────────────────────
 FROM node:20-alpine AS deps
-WORKDIR /workspace
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm i -g pnpm@10.0.0
+WORKDIR /app
 
-COPY package.json pnpm-workspace.yaml ./
-COPY packages/shared-config/package.json packages/shared-config/
-COPY packages/shared-logger/package.json packages/shared-logger/
-COPY packages/shared-metrics/package.json packages/shared-metrics/
-COPY packages/shared-rabbitmq/package.json packages/shared-rabbitmq/
-COPY packages/shared-types/package.json packages/shared-types/
-COPY frontend/package.json frontend/
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY frontend/package.json ./frontend/package.json
+# Packages that frontend might reference
+COPY packages/shared-types/package.json   ./packages/shared-types/package.json
+COPY packages/shared-logger/package.json  ./packages/shared-logger/package.json
+COPY packages/shared-config/package.json  ./packages/shared-config/package.json
+COPY packages/shared-metrics/package.json ./packages/shared-metrics/package.json
+COPY packages/shared-rabbitmq/package.json ./packages/shared-rabbitmq/package.json
 
 RUN pnpm install --frozen-lockfile
 
-# ── Stage 2: build ────────────────────────────────────────────────────────────
+# ── Stage 2: build Next.js ─────────────────────
 FROM deps AS builder
-WORKDIR /workspace
-COPY packages/ packages/
-COPY frontend/ frontend/
+WORKDIR /app
+COPY packages/ ./packages/
+COPY frontend/ ./frontend/
 
-RUN pnpm --filter @flashforge/frontend build
+# NEXT_PUBLIC_ vars must be set at build time
+ARG NEXT_PUBLIC_PRODUCT_SERVICE_URL
+ARG NEXT_PUBLIC_CHECKOUT_SERVICE_URL
+ARG NEXT_PUBLIC_ORDER_SERVICE_URL
+ENV NEXT_PUBLIC_PRODUCT_SERVICE_URL=$NEXT_PUBLIC_PRODUCT_SERVICE_URL
+ENV NEXT_PUBLIC_CHECKOUT_SERVICE_URL=$NEXT_PUBLIC_CHECKOUT_SERVICE_URL
+ENV NEXT_PUBLIC_ORDER_SERVICE_URL=$NEXT_PUBLIC_ORDER_SERVICE_URL
 
-# ── Stage 3: runtime ──────────────────────────────────────────────────────────
+RUN pnpm --filter @flashforge/frontend run build
+
+# ── Stage 3: lean runner ───────────────────────
 FROM node:20-alpine AS runner
-WORKDIR /workspace
+WORKDIR /app
 ENV NODE_ENV=production
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-COPY package.json pnpm-workspace.yaml ./
-COPY frontend/package.json frontend/
-
-RUN pnpm install --prod --frozen-lockfile --filter @flashforge/frontend
-
-COPY --from=builder /workspace/frontend/.next frontend/.next
-COPY --from=builder /workspace/frontend/public frontend/public
-COPY --from=builder /workspace/frontend/next.config.ts frontend/next.config.ts
+# Next.js needs its own node_modules
+COPY --from=builder /app/frontend/.next/standalone ./
+COPY --from=builder /app/frontend/.next/static    ./.next/static
+COPY --from=builder /app/frontend/public          ./public
 
 EXPOSE 3000
-CMD ["pnpm", "--filter", "@flashforge/frontend", "start"]
+ENV PORT=3000
+CMD ["node", "server.js"]

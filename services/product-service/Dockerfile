@@ -1,65 +1,52 @@
-# ── Stage 1: dependencies ────────────────────────────────────────────────────
+# ───────────────────────────────────────────────
+# Stage 1 – install ALL workspace deps
+# ───────────────────────────────────────────────
 FROM node:20-alpine AS deps
-WORKDIR /workspace
+RUN npm i -g pnpm@10.0.0
+WORKDIR /app
 
-# Install pnpm globally
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-# Copy workspace manifests
-COPY package.json pnpm-workspace.yaml ./
-COPY packages/shared-config/package.json packages/shared-config/
-COPY packages/shared-logger/package.json packages/shared-logger/
-COPY packages/shared-metrics/package.json packages/shared-metrics/
-COPY packages/shared-rabbitmq/package.json packages/shared-rabbitmq/
-COPY packages/shared-types/package.json packages/shared-types/
-COPY services/product-service/package.json services/product-service/
+# Copy workspace manifests (needed for pnpm to resolve workspace: links)
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/shared-types/package.json        ./packages/shared-types/package.json
+COPY packages/shared-logger/package.json       ./packages/shared-logger/package.json
+COPY packages/shared-metrics/package.json      ./packages/shared-metrics/package.json
+COPY packages/shared-config/package.json       ./packages/shared-config/package.json
+COPY packages/shared-rabbitmq/package.json     ./packages/shared-rabbitmq/package.json
+COPY services/product-service/package.json     ./services/product-service/package.json
 
 RUN pnpm install --frozen-lockfile
 
-# ── Stage 2: build ────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────
+# Stage 2 – copy source & build
+# ───────────────────────────────────────────────
 FROM deps AS builder
-WORKDIR /workspace
+WORKDIR /app
 
-# Copy all source
-COPY packages/ packages/
-COPY services/product-service/ services/product-service/
+COPY packages/ ./packages/
+COPY services/product-service/ ./services/product-service/
 
 # Generate Prisma client
-RUN pnpm --filter @flashforge/product-service exec prisma generate
+RUN pnpm --filter @flashforge/product-service exec \
+    sh -c 'cd /app/services/product-service && npx prisma generate'
 
-# Build shared packages then the service
-RUN pnpm --filter @flashforge/shared-types build \
-    && pnpm --filter @flashforge/shared-config build \
-    && pnpm --filter @flashforge/shared-logger build \
-    && pnpm --filter @flashforge/shared-metrics build \
-    && pnpm --filter @flashforge/product-service build
+# Compile TypeScript
+RUN pnpm --filter @flashforge/product-service run build
 
-# ── Stage 3: runtime ──────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────
+# Stage 3 – lean production image
+# ───────────────────────────────────────────────
 FROM node:20-alpine AS runner
-WORKDIR /workspace
-
+RUN npm i -g pnpm@10.0.0
+WORKDIR /app
 ENV NODE_ENV=production
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Copy node_modules from builder (includes workspace symlinks resolved)
+COPY --from=builder /app/node_modules         ./node_modules
+COPY --from=builder /app/packages              ./packages
+COPY --from=builder /app/services/product-service/dist              ./services/product-service/dist
+COPY --from=builder /app/services/product-service/src/generated     ./services/product-service/src/generated
+COPY --from=builder /app/services/product-service/package.json      ./services/product-service/package.json
 
-# Copy workspace manifests + lockfile again for production install
-COPY package.json pnpm-workspace.yaml ./
-COPY packages/shared-config/package.json packages/shared-config/
-COPY packages/shared-logger/package.json packages/shared-logger/
-COPY packages/shared-metrics/package.json packages/shared-metrics/
-COPY packages/shared-rabbitmq/package.json packages/shared-rabbitmq/
-COPY packages/shared-types/package.json packages/shared-types/
-COPY services/product-service/package.json services/product-service/
-
-RUN pnpm install --prod --frozen-lockfile
-
-# Copy built artifacts from builder
-COPY --from=builder /workspace/packages/shared-config/dist packages/shared-config/dist
-COPY --from=builder /workspace/packages/shared-logger/dist packages/shared-logger/dist
-COPY --from=builder /workspace/packages/shared-metrics/dist packages/shared-metrics/dist
-COPY --from=builder /workspace/packages/shared-types/dist packages/shared-types/dist
-COPY --from=builder /workspace/services/product-service/dist services/product-service/dist
-COPY --from=builder /workspace/services/product-service/src/generated services/product-service/src/generated
-
+WORKDIR /app/services/product-service
 EXPOSE 4001
-CMD ["node", "services/product-service/dist/server.js"]
+CMD ["node", "--max-old-space-size=128", "dist/server.js"]
