@@ -8,11 +8,11 @@ terraform {
     }
   }
 
-  backend "s3" {
-    bucket         = "flashforge-tf-state"
-    key            = "commerce/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "flashforge-tf-locks"
-    encrypt        = true
+  # Local backend — free tier. State file is stored on your machine.
+  # Add terraform.tfstate to .gitignore (it already is via the root .gitignore).
+  # If you later want to share state, migrate to an S3 backend.
+  backend "local" {
+    path = "terraform.tfstate"
   }
 }
+

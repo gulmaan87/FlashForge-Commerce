@@ -1,0 +1,170 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# FlashForge Commerce — Production Docker Compose
+#
+# External services (already cloud-hosted / free):
+#   MongoDB Atlas M0  →  set DATABASE_URL_* per service via environment
+#   Upstash Redis     →  REDIS_URL
+#   CloudAMQP AMQP    →  RABBITMQ_URL
+#
+# Usage on EC2:
+#   export $(cat /etc/flashforge.env | xargs)
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d
+# ─────────────────────────────────────────────────────────────────────────────
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  networks:
+    - flashforge
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+# ── Common env vars shared by every service ───────────────────────────────────
+x-common-env: &common-env
+  NODE_ENV: production
+  LOG_LEVEL: info
+  REDIS_URL: ${REDIS_URL}
+  RABBITMQ_URL: ${RABBITMQ_URL}
+  ALLOWED_ORIGINS: http://${EC2_PUBLIC_IP:-localhost}
+
+services:
+  # ── Reverse proxy ────────────────────────────────────────────────────────
+  nginx:
+    <<: *service-defaults
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - product-service
+      - inventory-service
+      - checkout-service
+      - payment-service
+      - order-service
+
+  # ── Microservices ─────────────────────────────────────────────────────────
+  product-service:
+    <<: *service-defaults
+    image: ghcr.io/${GHCR_OWNER}/flashforge/product-service:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      PORT: "4001"
+      DATABASE_URL: ${DATABASE_URL_PRODUCT}
+    expose:
+      - "4001"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 20s
+
+  inventory-service:
+    <<: *service-defaults
+    image: ghcr.io/${GHCR_OWNER}/flashforge/inventory-service:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      PORT: "4002"
+      DATABASE_URL: ${DATABASE_URL_INVENTORY}
+    expose:
+      - "4002"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4002/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 20s
+
+  checkout-service:
+    <<: *service-defaults
+    image: ghcr.io/${GHCR_OWNER}/flashforge/checkout-service:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      PORT: "4003"
+      DATABASE_URL: ${DATABASE_URL_CHECKOUT}
+      INVENTORY_SERVICE_URL: http://inventory-service:4002/api/inventory
+      PAYMENT_SERVICE_URL: http://payment-service:4004/api/payments
+    expose:
+      - "4003"
+    depends_on:
+      - inventory-service
+      - payment-service
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4003/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 20s
+
+  payment-service:
+    <<: *service-defaults
+    image: ghcr.io/${GHCR_OWNER}/flashforge/payment-service:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      PORT: "4004"
+      DATABASE_URL: ${DATABASE_URL_PAYMENT}
+    expose:
+      - "4004"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4004/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 20s
+
+  order-service:
+    <<: *service-defaults
+    image: ghcr.io/${GHCR_OWNER}/flashforge/order-service:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      PORT: "4005"
+      DATABASE_URL: ${DATABASE_URL_ORDER}
+    expose:
+      - "4005"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4005/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 20s
+
+  worker-service:
+    <<: *service-defaults
+    image: ghcr.io/${GHCR_OWNER}/flashforge/worker-service:${IMAGE_TAG:-latest}
+    environment:
+      <<: *common-env
+      PORT: "4006"
+      DATABASE_URL: ${DATABASE_URL_ORDER}   # shares order DB to write orders
+      ORDER_SERVICE_URL: http://order-service:4005/api/orders
+      INVENTORY_SERVICE_URL: http://inventory-service:4002/api/inventory
+    expose:
+      - "4006"
+    depends_on:
+      - order-service
+      - inventory-service
+
+  # ── Frontend ─────────────────────────────────────────────────────────────
+  frontend:
+    <<: *service-defaults
+    image: ghcr.io/${GHCR_OWNER}/flashforge/frontend:${IMAGE_TAG:-latest}
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      # These are baked in at build time via ARG; set here for clarity
+      NEXT_PUBLIC_PRODUCT_SERVICE_URL: http://${EC2_PUBLIC_IP:-localhost}/api/products
+      NEXT_PUBLIC_CHECKOUT_SERVICE_URL: http://${EC2_PUBLIC_IP:-localhost}/api/checkout
+      NEXT_PUBLIC_ORDER_SERVICE_URL: http://${EC2_PUBLIC_IP:-localhost}/api/orders
+    expose:
+      - "3000"
+    depends_on:
+      - product-service
+      - checkout-service
+
+networks:
+  flashforge:
+    driver: bridge

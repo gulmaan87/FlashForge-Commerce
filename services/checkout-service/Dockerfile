@@ -1,56 +1,37 @@
-# ── Stage 1: dependencies ─────────────────────────────────────────────────────
 FROM node:20-alpine AS deps
-WORKDIR /workspace
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm i -g pnpm@10.0.0
+WORKDIR /app
 
-COPY package.json pnpm-workspace.yaml ./
-COPY packages/shared-config/package.json packages/shared-config/
-COPY packages/shared-logger/package.json packages/shared-logger/
-COPY packages/shared-metrics/package.json packages/shared-metrics/
-COPY packages/shared-rabbitmq/package.json packages/shared-rabbitmq/
-COPY packages/shared-types/package.json packages/shared-types/
-COPY services/checkout-service/package.json services/checkout-service/
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/shared-types/package.json        ./packages/shared-types/package.json
+COPY packages/shared-logger/package.json       ./packages/shared-logger/package.json
+COPY packages/shared-metrics/package.json      ./packages/shared-metrics/package.json
+COPY packages/shared-config/package.json       ./packages/shared-config/package.json
+COPY packages/shared-rabbitmq/package.json     ./packages/shared-rabbitmq/package.json
+COPY services/checkout-service/package.json    ./services/checkout-service/package.json
 
 RUN pnpm install --frozen-lockfile
 
-# ── Stage 2: build ────────────────────────────────────────────────────────────
 FROM deps AS builder
-WORKDIR /workspace
-COPY packages/ packages/
-COPY services/checkout-service/ services/checkout-service/
+WORKDIR /app
+COPY packages/ ./packages/
+COPY services/checkout-service/ ./services/checkout-service/
 
-RUN pnpm --filter @flashforge/checkout-service exec prisma generate
+RUN pnpm --filter @flashforge/checkout-service exec \
+    sh -c 'cd /app/services/checkout-service && npx prisma generate'
+RUN pnpm --filter @flashforge/checkout-service run build
 
-RUN pnpm --filter @flashforge/shared-types build \
-    && pnpm --filter @flashforge/shared-config build \
-    && pnpm --filter @flashforge/shared-logger build \
-    && pnpm --filter @flashforge/shared-metrics build \
-    && pnpm --filter @flashforge/shared-rabbitmq build \
-    && pnpm --filter @flashforge/checkout-service build
-
-# ── Stage 3: runtime ──────────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
-WORKDIR /workspace
+RUN npm i -g pnpm@10.0.0
+WORKDIR /app
 ENV NODE_ENV=production
-RUN corepack enable && corepack prepare pnpm@latest --activate
 
-COPY package.json pnpm-workspace.yaml ./
-COPY packages/shared-config/package.json packages/shared-config/
-COPY packages/shared-logger/package.json packages/shared-logger/
-COPY packages/shared-metrics/package.json packages/shared-metrics/
-COPY packages/shared-rabbitmq/package.json packages/shared-rabbitmq/
-COPY packages/shared-types/package.json packages/shared-types/
-COPY services/checkout-service/package.json services/checkout-service/
+COPY --from=builder /app/node_modules          ./node_modules
+COPY --from=builder /app/packages               ./packages
+COPY --from=builder /app/services/checkout-service/dist             ./services/checkout-service/dist
+COPY --from=builder /app/services/checkout-service/src/generated    ./services/checkout-service/src/generated
+COPY --from=builder /app/services/checkout-service/package.json     ./services/checkout-service/package.json
 
-RUN pnpm install --prod --frozen-lockfile
-
-COPY --from=builder /workspace/packages/shared-config/dist packages/shared-config/dist
-COPY --from=builder /workspace/packages/shared-logger/dist packages/shared-logger/dist
-COPY --from=builder /workspace/packages/shared-metrics/dist packages/shared-metrics/dist
-COPY --from=builder /workspace/packages/shared-rabbitmq/dist packages/shared-rabbitmq/dist
-COPY --from=builder /workspace/packages/shared-types/dist packages/shared-types/dist
-COPY --from=builder /workspace/services/checkout-service/dist services/checkout-service/dist
-COPY --from=builder /workspace/services/checkout-service/src/generated services/checkout-service/src/generated
-
+WORKDIR /app/services/checkout-service
 EXPOSE 4003
-CMD ["node", "services/checkout-service/dist/server.js"]
+CMD ["node", "--max-old-space-size=128", "dist/server.js"]
