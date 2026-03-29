@@ -2,7 +2,7 @@ name: Build & Deploy to EC2
 
 on:
   push:
-    branches: [main]
+    branches: [master]
 
 env:
   GHCR_REGISTRY: ghcr.io
