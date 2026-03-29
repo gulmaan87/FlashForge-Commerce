@@ -4,6 +4,10 @@
   "version": "1.0.0",
   "description": "Production-grade flash-sale checkout and reliability platform",
   "packageManager": "pnpm@10.0.0",
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
   "scripts": {
     "lint": "pnpm -r lint",
     "format": "prettier --write .",

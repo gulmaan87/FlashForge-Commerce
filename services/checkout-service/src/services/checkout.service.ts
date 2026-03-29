@@ -2,25 +2,33 @@ import { CheckoutRepository } from '../repositories/checkout.repository';
 import { CheckoutStatus, PaymentStatus } from '@flashforge/shared-types';
 import axios from 'axios';
 import { getEnv } from '@flashforge/shared-config';
-import { publishEvent, connectRabbitMQ } from '@flashforge/shared-rabbitmq';
+import { publishEvent } from '@flashforge/shared-rabbitmq';
 import { createLogger } from '@flashforge/shared-logger';
 
 const logger = createLogger('checkout-service');
+
+// 5-second timeout for all inter-service HTTP calls.
+// Prevents a hung downstream service from freezing checkout indefinitely.
+const http = axios.create({ timeout: 5_000 });
+
+interface CartItem {
+  productId: string;
+  quantity: number;
+  price: number;
+}
 
 export class CheckoutService {
   private repo: CheckoutRepository;
   private inventoryServiceUrl: string;
   private paymentServiceUrl: string;
-  private rabbitMqUrl: string;
 
   constructor() {
     this.repo = new CheckoutRepository();
-    this.inventoryServiceUrl = getEnv('INVENTORY_SERVICE_URL', 'http://localhost:4002/api/inventory');
-    this.paymentServiceUrl = getEnv('PAYMENT_SERVICE_URL', 'http://localhost:4004/api/payments');
-    this.rabbitMqUrl = getEnv('RABBITMQ_URL', 'amqp://localhost:5672');
+    this.inventoryServiceUrl = getEnv('INVENTORY_SERVICE_URL', 'http://inventory-service:4002/api/inventory');
+    this.paymentServiceUrl = getEnv('PAYMENT_SERVICE_URL', 'http://payment-service:4004/api/payments');
   }
 
-  async createSession(userId: string, cart: { productId: string; quantity: number; price: number }[]) {
+  async createSession(userId: string, cart: CartItem[]) {
     let totalAmount = 0;
     cart.forEach(item => totalAmount += item.price * item.quantity);
 
@@ -39,34 +47,37 @@ export class CheckoutService {
       throw new Error('Checkout session in invalid state');
     }
 
-    const cart = session.cart as any[];
-    
+    const cart = session.cart as unknown as CartItem[];
+
     // Step 1: Reserve Inventory
     const reservations: string[] = [];
     try {
       for (const item of cart) {
-        const { data } = await axios.post(`${this.inventoryServiceUrl}/${item.productId}/reservations`, {
-          quantity: item.quantity
-        });
+        const { data } = await http.post(
+          `${this.inventoryServiceUrl}/${item.productId}/reservations`,
+          { quantity: item.quantity },
+        );
         reservations.push(data.data.id);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Rollback all successfully created reservations
       for (const resId of reservations) {
-        await axios.post(`${this.inventoryServiceUrl}/reservations/${resId}/release`).catch(e => logger.error(e, 'Failed to rollback reservation'));
+        await http
+          .post(`${this.inventoryServiceUrl}/reservations/${resId}/release`)
+          .catch((e: unknown) => logger.error(e, 'Failed to rollback reservation'));
       }
       throw new Error('Failed to reserve inventory');
     }
 
     await this.repo.updateSession(sessionId, {
       status: CheckoutStatus.PAYMENT_PENDING,
-      reservationId: reservations.join(',')
+      reservationId: reservations.join(','),
     });
 
     // Step 2: Create Payment Intent
     let paymentId: string;
     try {
-      const { data } = await axios.post(`${this.paymentServiceUrl}/intents`, {
+      const { data } = await http.post(`${this.paymentServiceUrl}/intents`, {
         sessionId,
         amount: session.totalAmount,
       });
@@ -79,16 +90,16 @@ export class CheckoutService {
     // Step 3: Confirm Payment (simulated — in production this would be a webhook)
     let paymentSucceeded = false;
     try {
-      const { data } = await axios.post(`${this.paymentServiceUrl}/confirm`, { sessionId });
+      const { data } = await http.post(`${this.paymentServiceUrl}/confirm`, { sessionId });
       paymentSucceeded = data.data?.status === PaymentStatus.SUCCESS;
     } catch (err) {
       logger.error(err, 'Payment confirmation call failed');
     }
 
     // Step 4: Publish event and update session status
+    // connectRabbitMQ is called once at server startup (server.ts),
+    // so the channel is already available here — no per-request reconnect needed.
     try {
-      await connectRabbitMQ({ url: this.rabbitMqUrl });
-
       if (paymentSucceeded) {
         await this.repo.updateSession(sessionId, { status: CheckoutStatus.COMPLETED });
 
@@ -118,10 +129,9 @@ export class CheckoutService {
 
     return {
       sessionId,
-      paymentId,
+      paymentId: paymentId!,
       totalAmount: session.totalAmount,
       paymentStatus: paymentSucceeded ? PaymentStatus.SUCCESS : PaymentStatus.FAILED,
     };
   }
 }
-

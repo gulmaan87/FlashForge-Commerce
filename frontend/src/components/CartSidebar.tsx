@@ -19,22 +19,34 @@ export default function CartSidebar() {
       {/* Backdrop */}
       <div
         className="fixed inset-0 z-50"
-        style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+        style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
         onClick={closeCart}
         aria-hidden="true"
       />
 
-      {/* Drawer */}
+      {/* Drawer — full width on xs, capped at 400px on sm+ */}
       <aside
-        className="fixed right-0 top-0 z-50 h-full w-full max-w-sm flex flex-col animate-slideInRight"
-        style={{ background: 'var(--bg-secondary)', borderLeft: '1px solid var(--border)' }}
+        className="animate-slideInRight fixed right-0 top-0 z-50 h-full flex flex-col cart-sidebar"
+        style={{
+          width: 'min(100vw, 400px)',
+          background: 'var(--bg-secondary)',
+          borderLeft: '1px solid var(--border)',
+          /* Safe area on notched phones */
+          paddingRight: 'env(safe-area-inset-right)',
+        }}
         role="dialog"
         aria-label="Shopping cart"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div
+          className="flex items-center justify-between"
+          style={{
+            padding: 'clamp(1rem, 3vw, 1.25rem) clamp(1rem, 4vw, 1.5rem)',
+            borderBottom: '1px solid var(--border)',
+          }}
+        >
           <h2 className="font-semibold text-lg flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5" style={{ color: 'var(--accent)' }} />
+            <ShoppingBag className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--accent)' }} />
             Cart
             {itemCount > 0 && (
               <span className="text-sm font-normal" style={{ color: 'var(--text-secondary)' }}>
@@ -44,19 +56,25 @@ export default function CartSidebar() {
           </h2>
           <button
             onClick={closeCart}
-            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
+            className="flex items-center justify-center rounded-lg transition-colors hover:bg-white/10"
+            style={{ width: 36, height: 36 }}
+            aria-label="Close cart"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Items */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        {/* Items — scrollable */}
+        <div
+          className="flex-1 overflow-y-auto"
+          style={{ padding: 'clamp(0.75rem, 3vw, 1.25rem)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
+        >
           {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 gap-3" style={{ color: 'var(--text-muted)' }}>
-              <ShoppingBag className="w-12 h-12 opacity-40" />
+            <div className="flex flex-col items-center justify-center h-48 gap-3 text-center"
+              style={{ color: 'var(--text-muted)' }}>
+              <ShoppingBag className="w-12 h-12 opacity-30" />
               <p className="text-sm">Your cart is empty</p>
-              <button onClick={closeCart} className="text-sm mt-1" style={{ color: 'var(--accent)' }}>
+              <button onClick={closeCart} className="text-sm" style={{ color: 'var(--accent)' }}>
                 Continue shopping
               </button>
             </div>
@@ -64,13 +82,17 @@ export default function CartSidebar() {
             items.map(item => (
               <div
                 key={item.productId}
-                className="flex gap-3 p-3 rounded-xl"
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                className="flex gap-3 rounded-xl"
+                style={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
+                  padding: 'clamp(0.6rem, 2vw, 0.75rem)',
+                }}
               >
-                {/* Image placeholder */}
+                {/* Thumbnail */}
                 <div
-                  className="w-16 h-16 flex-shrink-0 rounded-lg flex items-center justify-center text-2xl"
-                  style={{ background: 'var(--bg-secondary)' }}
+                  className="rounded-lg flex items-center justify-center text-xl flex-shrink-0"
+                  style={{ width: 56, height: 56, background: 'var(--bg-secondary)', minWidth: 56 }}
                 >
                   🛍️
                 </div>
@@ -81,22 +103,23 @@ export default function CartSidebar() {
                     ${formatPrice(item.price)} each
                   </p>
 
-                  <div className="flex items-center justify-between mt-2">
-                    {/* Qty controls */}
-                    <div className="flex items-center gap-1.5">
+                  {/* Controls row — wraps on tiny screens */}
+                  <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
+                    {/* Qty */}
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={() => updateQty(item.productId, item.quantity - 1)}
-                        className="w-6 h-6 rounded-md flex items-center justify-center transition-colors hover:bg-white/10"
-                        style={{ border: '1px solid var(--border)' }}
+                        className="flex items-center justify-center rounded-md transition-colors hover:bg-white/10"
+                        style={{ width: 26, height: 26, border: '1px solid var(--border)' }}
                         aria-label="Decrease quantity"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                      <span className="text-sm font-medium w-5 text-center tabular-nums">{item.quantity}</span>
                       <button
                         onClick={() => updateQty(item.productId, item.quantity + 1)}
-                        className="w-6 h-6 rounded-md flex items-center justify-center transition-colors hover:bg-white/10"
-                        style={{ border: '1px solid var(--border)' }}
+                        className="flex items-center justify-center rounded-md transition-colors hover:bg-white/10"
+                        style={{ width: 26, height: 26, border: '1px solid var(--border)' }}
                         aria-label="Increase quantity"
                       >
                         <Plus className="w-3 h-3" />
@@ -109,8 +132,8 @@ export default function CartSidebar() {
                       </span>
                       <button
                         onClick={() => removeItem(item.productId)}
-                        className="w-6 h-6 rounded-md flex items-center justify-center transition-colors hover:text-red-400"
-                        style={{ color: 'var(--text-muted)' }}
+                        className="flex items-center justify-center transition-colors hover:text-red-400"
+                        style={{ width: 26, height: 26, color: 'var(--text-muted)' }}
                         aria-label={`Remove ${item.product.name}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -125,13 +148,24 @@ export default function CartSidebar() {
 
         {/* Footer */}
         {items.length > 0 && (
-          <div className="p-5 space-y-4" style={{ borderTop: '1px solid var(--border)' }}>
+          <div
+            style={{
+              borderTop: '1px solid var(--border)',
+              padding: 'clamp(0.75rem, 3vw, 1.25rem) clamp(1rem, 4vw, 1.5rem)',
+              paddingBottom: 'max(clamp(0.75rem, 3vw, 1.25rem), env(safe-area-inset-bottom))',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.875rem',
+            }}
+          >
+            {/* Subtotal */}
             <div className="flex justify-between text-sm" style={{ color: 'var(--text-secondary)' }}>
               <span>Subtotal</span>
-              <span className="text-white font-semibold">${formatPrice(total)}</span>
+              <span className="font-semibold text-white">${formatPrice(total)}</span>
             </div>
 
-            <Link href="/checkout" onClick={closeCart} className="block">
+            {/* Checkout */}
+            <Link href="/checkout" onClick={closeCart} className="block w-full">
               <button className="btn-accent w-full justify-center text-base">
                 Checkout
                 <ArrowRight className="w-4 h-4" />
@@ -140,7 +174,7 @@ export default function CartSidebar() {
 
             <button
               onClick={clearCart}
-              className="w-full text-sm text-center transition-colors hover:text-red-400"
+              className="w-full text-sm text-center transition-colors hover:text-red-400 py-1"
               style={{ color: 'var(--text-muted)' }}
             >
               Clear cart
