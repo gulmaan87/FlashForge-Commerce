@@ -106,24 +106,20 @@ jobs:
             set -euo pipefail
             cd /opt/flashforge
 
-            # Load environment variables (written by EC2 bootstrap / updated below)
-            set -a; source /etc/flashforge.env; set +a
-
-            # Always use the latest tag
             export IMAGE_TAG=latest
-            export GHCR_OWNER=${{ env.GHCR_OWNER }}
+            export GHCR_OWNER=gulmaan87
 
-            # Log in to GHCR (uses GITHUB_TOKEN passed as env var)
+            # Log in to GHCR
             echo "${{ secrets.GITHUB_TOKEN }}" | \
               docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             # Pull latest images
             docker compose -f docker-compose.prod.yml pull
 
-            # Recreate changed containers; keep others running (zero-downtime for unchanged)
+            # Recreate changed containers
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
-            # Clean up dangling images to save disk
+            # Clean up dangling images
             docker image prune -f
 
             echo "=== Deploy finished. Running containers: ==="
