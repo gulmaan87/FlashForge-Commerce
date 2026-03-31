@@ -106,6 +106,9 @@ jobs:
             set -euo pipefail
             cd /opt/flashforge
 
+            # Take ownership of deploy dir (created by root in userdata bootstrap)
+            sudo chown -R ec2-user:ec2-user /opt/flashforge
+
             # Build .env — use printf so all content stays indented within YAML
             export AWS_DEFAULT_REGION=ap-south-1
             printf 'GHCR_OWNER=gulmaan87\nIMAGE_TAG=latest\n' > .env
