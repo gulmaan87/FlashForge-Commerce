@@ -110,15 +110,9 @@ jobs:
             set -euo pipefail
             cd /opt/flashforge
 
-            # Fetch secrets from SSM and write .env
+            # Build .env — use printf so all content stays indented within YAML
             export AWS_DEFAULT_REGION=ap-south-1
-            # Use a clean heredoc — EOF must be at column 0 with no leading spaces
-            cat > .env <<'ENVEOF'
-GHCR_OWNER=gulmaan87
-IMAGE_TAG=latest
-ENVEOF
-
-            # Append dynamic values from SSM (run as separate commands to avoid heredoc quoting issues)
+            printf 'GHCR_OWNER=gulmaan87\nIMAGE_TAG=latest\n' > .env
             echo "DATABASE_URL_PRODUCT=$(aws ssm get-parameter --name /flashforge/DATABASE_URL_PRODUCT --with-decryption --query Parameter.Value --output text)" >> .env
             echo "DATABASE_URL_INVENTORY=$(aws ssm get-parameter --name /flashforge/DATABASE_URL_INVENTORY --with-decryption --query Parameter.Value --output text)" >> .env
             echo "DATABASE_URL_ORDER=$(aws ssm get-parameter --name /flashforge/DATABASE_URL_ORDER --with-decryption --query Parameter.Value --output text)" >> .env
