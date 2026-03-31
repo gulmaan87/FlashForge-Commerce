@@ -24,16 +24,14 @@ RUN pnpm --filter @flashforge/shared-metrics build
 RUN cd /app/services/inventory-service && npx prisma generate
 RUN pnpm --filter @flashforge/inventory-service run build
 
+RUN pnpm --filter @flashforge/inventory-service deploy /deploy --prod
+RUN cp -r /app/services/inventory-service/dist /deploy/dist
+RUN cp -r /app/services/inventory-service/src/generated /deploy/src/generated 2>/dev/null || true
+
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+COPY --from=builder /deploy ./
 
-COPY --from=builder /app/node_modules       ./node_modules
-COPY --from=builder /app/packages           ./packages
-COPY --from=builder /app/services/inventory-service/dist            ./services/inventory-service/dist
-COPY --from=builder /app/services/inventory-service/src/generated   ./services/inventory-service/src/generated
-COPY --from=builder /app/services/inventory-service/package.json    ./services/inventory-service/package.json
-
-WORKDIR /app/services/inventory-service
 EXPOSE 4002
 CMD ["node", "--max-old-space-size=128", "dist/server.js"]

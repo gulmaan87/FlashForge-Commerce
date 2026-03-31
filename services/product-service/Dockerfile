@@ -22,22 +22,24 @@ RUN pnpm --filter @flashforge/shared-types build
 RUN pnpm --filter @flashforge/shared-logger build
 RUN pnpm --filter @flashforge/shared-metrics build
 
-# Generate Prisma client (schema output = src/generated/client)
+# Generate Prisma client
 RUN cd /app/services/product-service && npx prisma generate
 
 # Build the service
 RUN pnpm --filter @flashforge/product-service run build
 
+# Create a self-contained deployable directory with all deps resolved
+RUN pnpm --filter @flashforge/product-service deploy /deploy --prod
+
+# Copy built artifacts into the deploy folder
+RUN cp -r /app/services/product-service/dist /deploy/dist
+RUN cp -r /app/services/product-service/src/generated /deploy/src/generated 2>/dev/null || true
+
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY --from=builder /app/node_modules     ./node_modules
-COPY --from=builder /app/packages         ./packages
-COPY --from=builder /app/services/product-service/dist            ./services/product-service/dist
-COPY --from=builder /app/services/product-service/src/generated   ./services/product-service/src/generated
-COPY --from=builder /app/services/product-service/package.json    ./services/product-service/package.json
+COPY --from=builder /deploy ./
 
-WORKDIR /app/services/product-service
 EXPOSE 4001
 CMD ["node", "--max-old-space-size=128", "dist/server.js"]

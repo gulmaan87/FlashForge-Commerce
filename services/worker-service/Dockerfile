@@ -25,15 +25,13 @@ RUN pnpm --filter @flashforge/shared-rabbitmq build
 
 RUN pnpm --filter @flashforge/worker-service run build
 
+RUN pnpm --filter @flashforge/worker-service deploy /deploy --prod
+RUN cp -r /app/services/worker-service/dist /deploy/dist
+
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+COPY --from=builder /deploy ./
 
-COPY --from=builder /app/node_modules       ./node_modules
-COPY --from=builder /app/packages           ./packages
-COPY --from=builder /app/services/worker-service/dist         ./services/worker-service/dist
-COPY --from=builder /app/services/worker-service/package.json ./services/worker-service/package.json
-
-WORKDIR /app/services/worker-service
 EXPOSE 4006
 CMD ["node", "--max-old-space-size=128", "dist/server.js"]

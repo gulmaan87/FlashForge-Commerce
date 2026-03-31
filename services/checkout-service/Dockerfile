@@ -26,16 +26,14 @@ RUN pnpm --filter @flashforge/shared-rabbitmq build
 RUN cd /app/services/checkout-service && npx prisma generate
 RUN pnpm --filter @flashforge/checkout-service run build
 
+RUN pnpm --filter @flashforge/checkout-service deploy /deploy --prod
+RUN cp -r /app/services/checkout-service/dist /deploy/dist
+RUN cp -r /app/services/checkout-service/src/generated /deploy/src/generated 2>/dev/null || true
+
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+COPY --from=builder /deploy ./
 
-COPY --from=builder /app/node_modules       ./node_modules
-COPY --from=builder /app/packages           ./packages
-COPY --from=builder /app/services/checkout-service/dist            ./services/checkout-service/dist
-COPY --from=builder /app/services/checkout-service/src/generated   ./services/checkout-service/src/generated
-COPY --from=builder /app/services/checkout-service/package.json    ./services/checkout-service/package.json
-
-WORKDIR /app/services/checkout-service
 EXPOSE 4003
 CMD ["node", "--max-old-space-size=128", "dist/server.js"]
