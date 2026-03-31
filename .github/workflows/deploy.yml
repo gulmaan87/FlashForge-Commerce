@@ -135,6 +135,18 @@ jobs:
             echo "=== Deploy finished. Running containers: ==="
             docker compose --env-file .env -f docker-compose.prod.yml ps
 
+            echo "=== Waiting 15s for containers to stabilise ==="
+            sleep 15
+
+            echo "=== Logs: frontend ==="
+            docker logs flashforge-frontend-1 --tail=40 2>&1 || true
+            echo "=== Logs: checkout-service ==="
+            docker logs flashforge-checkout-service-1 --tail=40 2>&1 || true
+            echo "=== Logs: inventory-service ==="
+            docker logs flashforge-inventory-service-1 --tail=40 2>&1 || true
+            echo "=== Logs: payment-service ==="
+            docker logs flashforge-payment-service-1 --tail=40 2>&1 || true
+
       - name: Smoke test
         run: |
           sleep 30
