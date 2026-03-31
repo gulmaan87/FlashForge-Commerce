@@ -1,4 +1,4 @@
-FROM node:20-alpine AS deps
+FROM node:20-alpine
 RUN npm i -g pnpm@10.0.0
 WORKDIR /app
 
@@ -12,8 +12,6 @@ COPY services/worker-service/package.json      ./services/worker-service/package
 
 RUN pnpm install --frozen-lockfile
 
-FROM deps AS builder
-WORKDIR /app
 COPY packages/ ./packages/
 COPY services/worker-service/ ./services/worker-service/
 
@@ -25,13 +23,7 @@ RUN pnpm --filter @flashforge/shared-rabbitmq build
 
 RUN pnpm --filter @flashforge/worker-service run build
 
-RUN pnpm --filter @flashforge/worker-service deploy /deploy --prod
-RUN cp -r /app/services/worker-service/dist /deploy/dist
-
-FROM node:20-alpine AS runner
-WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /deploy ./
-
+WORKDIR /app/services/worker-service
 EXPOSE 4006
 CMD ["node", "--max-old-space-size=128", "dist/server.js"]

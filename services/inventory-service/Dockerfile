@@ -1,4 +1,4 @@
-FROM node:20-alpine AS deps
+FROM node:20-alpine
 RUN npm i -g pnpm@10.0.0
 WORKDIR /app
 
@@ -12,8 +12,6 @@ COPY services/inventory-service/package.json   ./services/inventory-service/pack
 
 RUN pnpm install --frozen-lockfile
 
-FROM deps AS builder
-WORKDIR /app
 COPY packages/ ./packages/
 COPY services/inventory-service/ ./services/inventory-service/
 
@@ -24,14 +22,7 @@ RUN pnpm --filter @flashforge/shared-metrics build
 RUN cd /app/services/inventory-service && npx prisma generate
 RUN pnpm --filter @flashforge/inventory-service run build
 
-RUN pnpm --filter @flashforge/inventory-service deploy /deploy --prod
-RUN cp -r /app/services/inventory-service/dist /deploy/dist
-RUN cp -r /app/services/inventory-service/src/generated /deploy/src/generated 2>/dev/null || true
-
-FROM node:20-alpine AS runner
-WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /deploy ./
-
+WORKDIR /app/services/inventory-service
 EXPOSE 4002
 CMD ["node", "--max-old-space-size=128", "dist/server.js"]
