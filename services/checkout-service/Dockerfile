@@ -23,6 +23,7 @@ RUN pnpm --filter @flashforge/shared-rabbitmq build
 
 RUN cd /app/services/checkout-service && npx prisma generate
 RUN pnpm --filter @flashforge/checkout-service run build
+RUN cp -r /app/services/checkout-service/src/generated /app/services/checkout-service/dist/
 
 ENV NODE_ENV=production
 WORKDIR /app/services/checkout-service

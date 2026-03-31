@@ -22,6 +22,7 @@ RUN pnpm --filter @flashforge/shared-rabbitmq build
 
 RUN cd /app/services/payment-service && npx prisma generate
 RUN pnpm --filter @flashforge/payment-service run build
+RUN cp -r /app/services/payment-service/src/generated /app/services/payment-service/dist/
 
 ENV NODE_ENV=production
 WORKDIR /app/services/payment-service

@@ -34,12 +34,13 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
+# standalone/ root contains frontend/server.js (monorepo layout)
 COPY --from=builder /app/frontend/.next/standalone ./
-COPY --from=builder /app/frontend/.next/static     ./.next/static
-# public/ may be empty but must exist — copy with a fallback mkdir
-RUN mkdir -p ./public
-COPY --from=builder /app/frontend/public/          ./public/
+# static assets must be alongside server.js in the frontend/ subdir
+COPY --from=builder /app/frontend/.next/static     ./frontend/.next/static
+RUN mkdir -p ./frontend/public
+COPY --from=builder /app/frontend/public/          ./frontend/public/
 
 EXPOSE 3000
 ENV PORT=3000
-CMD ["node", "server.js"]
+CMD ["node", "frontend/server.js"]
