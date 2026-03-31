@@ -98,14 +98,10 @@ jobs:
 
       - name: Pull images & restart stack
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-          GHCR_ACTOR: ${{ github.actor }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: GHCR_TOKEN,GHCR_ACTOR
           script: |
             set -euo pipefail
             cd /opt/flashforge
@@ -121,8 +117,8 @@ jobs:
             echo "REDIS_URL=$(aws ssm get-parameter --name /flashforge/REDIS_URL --with-decryption --query Parameter.Value --output text)" >> .env
             echo "RABBITMQ_URL=$(aws ssm get-parameter --name /flashforge/RABBITMQ_URL --with-decryption --query Parameter.Value --output text)" >> .env
 
-            # Log in to GHCR using the dedicated PAT (GHCR_TOKEN) passed via envs
-            echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_ACTOR}" --password-stdin
+            # Log in to GHCR using a dedicated PAT — ${{ }} is evaluated by the runner before SSH sends the script
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
             # Pull latest images
             docker compose --env-file .env -f docker-compose.prod.yml pull
