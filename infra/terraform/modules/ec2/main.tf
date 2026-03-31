@@ -80,11 +80,18 @@ resource "aws_iam_role_policy" "ec2_ssm_read" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["ssm:GetParameter", "ssm:GetParameters", "ssm:GetParametersByPath"]
-      Resource = "arn:aws:ssm:${var.aws_region}:*:parameter/flashforge/*"
-    }]
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["ssm:GetParameter", "ssm:GetParameters", "ssm:GetParametersByPath"]
+        Resource = "arn:aws:ssm:${var.aws_region}:*:parameter/flashforge/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt"]
+        Resource = "*"   # Allows decrypting the default SSM-managed KMS key (aws/ssm)
+      }
+    ]
   })
 }
 
