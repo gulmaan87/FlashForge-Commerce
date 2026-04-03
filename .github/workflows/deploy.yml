@@ -146,6 +146,12 @@ jobs:
             docker logs flashforge-inventory-service-1 --tail=40 2>&1 || true
             echo "=== Logs: payment-service ==="
             docker logs flashforge-payment-service-1 --tail=40 2>&1 || true
+            echo "=== Logs: product-service ==="
+            docker logs flashforge-product-service-1 --tail=40 2>&1 || true
+            echo "=== Logs: order-service ==="
+            docker logs flashforge-order-service-1 --tail=40 2>&1 || true
+            echo "=== Logs: nginx ==="
+            docker logs flashforge-nginx-1 --tail=40 2>&1 || true
 
       - name: Smoke test
         run: |

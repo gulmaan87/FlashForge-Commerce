@@ -21,6 +21,7 @@ RUN pnpm --filter @flashforge/shared-metrics build
 
 RUN cd /app/services/product-service && npx prisma generate
 RUN pnpm --filter @flashforge/product-service run build
+RUN cp -r /app/services/product-service/src/generated /app/services/product-service/dist/
 
 ENV NODE_ENV=production
 WORKDIR /app/services/product-service

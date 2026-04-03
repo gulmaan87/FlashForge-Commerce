@@ -22,6 +22,7 @@ RUN pnpm --filter @flashforge/shared-rabbitmq build
 
 RUN cd /app/services/order-service && npx prisma generate
 RUN pnpm --filter @flashforge/order-service run build
+RUN cp -r /app/services/order-service/src/generated /app/services/order-service/dist/
 
 ENV NODE_ENV=production
 WORKDIR /app/services/order-service
