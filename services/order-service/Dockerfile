@@ -1,4 +1,5 @@
 FROM node:20-alpine
+RUN apk add --no-cache openssl
 RUN npm i -g pnpm@10.0.0
 WORKDIR /app
 
