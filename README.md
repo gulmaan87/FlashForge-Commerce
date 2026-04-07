@@ -1,6 +1,48 @@
 # FlashForge Commerce
 
-> **Production-grade flash-sale e-commerce platform** built on Node.js microservices, demonstrating high-concurrency checkout orchestration, inventory oversell prevention, idempotent payments, async event processing, and full observability.
+> **Production-grade flash-sale e-commerce platform** built on Node.js microservices, hosted on **AWS EC2 behind CloudFront (HTTPS)**, demonstrating high-concurrency checkout orchestration, inventory oversell prevention, idempotent payments, async event processing, and full observability via Prometheus + Grafana.
+
+<div align="center">
+
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-CloudFront%20HTTPS-orange?style=for-the-badge&logo=amazonaws)](https://dw7pv6mehop5x.cloudfront.net)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-green?style=for-the-badge&logo=nodedotjs)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org)
+[![AWS](https://img.shields.io/badge/AWS-EC2%20%2B%20CloudFront-orange?style=for-the-badge&logo=amazonaws)](https://aws.amazon.com)
+
+</div>
+
+---
+
+## 📸 Live Screenshots
+
+### 🛒 Storefront — Live on AWS CloudFront (HTTPS)
+![FlashForge Storefront](docs/screenshots/storefront_home.png)
+> Live at **[https://dw7pv6mehop5x.cloudfront.net](https://dw7pv6mehop5x.cloudfront.net)** — Next.js 15 frontend served via AWS CloudFront with TLS termination.
+
+---
+
+### 📦 Storefront Features
+![Storefront Features](docs/screenshots/storefront_features.png)
+> Instant Checkout (idempotent API design), Safe & Secure payments, and Real-time Stock tracking across microservices.
+
+---
+
+### 📡 Prometheus — All Microservices Scraped via CloudFront HTTPS
+![Prometheus Targets UP](docs/screenshots/prometheus_targets.png)
+> All 5 microservices (**checkout, inventory, order, payment, product**) report **UP** to local Prometheus — scraped securely through `https://dw7pv6mehop5x.cloudfront.net/metrics/<service>` using Bearer token auth.
+
+---
+
+### 📊 Grafana — Service Overview Dashboard
+![Grafana Dashboard](docs/screenshots/grafana_dashboard.png)
+> Auto-provisioned Grafana dashboard at `localhost:3001` connected to Prometheus, with panels for HTTP Requests/sec, p95 Latency, 5xx Error Rate, and Checkout/Payment Success Rate.
+
+---
+
+### 🔬 Grafana Explore — Live `flashforge_*` Metrics
+![Grafana Metrics Confirmed](docs/screenshots/grafana_metrics.png)
+> `flashforge_http_requests_total`, `flashforge_http_request_duration_seconds`, and custom Node.js metrics flowing live from production into Grafana Explore.
 
 ---
 
@@ -10,13 +52,53 @@
 |---|---|
 | **Services** | 6 TypeScript/Express microservices |
 | **Frontend** | Next.js 15 App Router storefront |
-| **Database** | PostgreSQL 15 + Prisma ORM |
-| **Cache / Locks** | Redis 7 (TTL-based inventory reservation) |
-| **Messaging** | RabbitMQ 3 (async payment → order pipeline) |
-| **Observability** | Prometheus + Grafana |
+| **Database** | MongoDB Atlas (per-service collections) |
+| **Cache / Locks** | Upstash Redis (TTL-based inventory reservation) |
+| **Messaging** | CloudAMQP RabbitMQ (async payment → order pipeline) |
+| **Observability** | Prometheus + Grafana (scraped via CloudFront) |
 | **Load Testing** | k6 |
-| **Containers** | Docker Compose (full stack); AWS VPC via `infra/terraform/` |
+| **Containers** | Docker Compose (local + production) |
+| **Cloud** | AWS EC2 (`t3.micro`) + **CloudFront CDN (HTTPS)** |
+| **IaC** | Terraform (VPC, EC2, EIP, SSM, CloudFront) |
+| **Secrets** | AWS SSM Parameter Store (SecureString) |
 | **Monorepo** | pnpm workspaces + shared packages |
+| **CI/CD** | GitHub Actions → GHCR → EC2 via SSH |
+
+---
+
+## 🏗️ Architecture
+
+```
+Browser / Prometheus (local)
+        │
+        ▼
+┌─────────────────────────────────────────┐
+│         AWS CloudFront (HTTPS)          │  ← TLS termination, CDN
+│     dw7pv6mehop5x.cloudfront.net        │
+└───────────────┬─────────────────────────┘
+                │ http (origin-only)
+                ▼
+┌───────────────────────────────────────────────────────┐
+│               AWS EC2 t3.micro (ap-south-1)           │
+│  ┌─────────────────────────────────────────────────┐  │
+│  │               Nginx (port 80)                   │  │
+│  │  /api/products  →  product-service:4001         │  │
+│  │  /api/inventory →  inventory-service:4002       │  │
+│  │  /api/checkout  →  checkout-service:4003        │  │
+│  │  /api/payments  →  payment-service:4004         │  │
+│  │  /api/orders    →  order-service:4005           │  │
+│  │  /metrics/*     →  <service>/metrics (authed)   │  │
+│  │  /              →  Next.js frontend:3000        │  │
+│  └─────────────────────────────────────────────────┘  │
+│                                                        │
+│  product-service ──► MongoDB Atlas (products)          │
+│  inventory-service ─► Upstash Redis (TTL locks)        │
+│  checkout-service ──► inventory + payment + RabbitMQ   │
+│  payment-service ───► MongoDB Atlas (payments)         │
+│  order-service ─────► MongoDB Atlas (orders)           │
+│  worker-service ────► RabbitMQ consumer (saga)         │
+└───────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -34,77 +116,61 @@
 docker compose -f infra/docker-compose/docker-compose.yml up --build
 ```
 
-This boots everything: PostgreSQL, Redis, RabbitMQ, all 6 microservices, the Next.js frontend, Prometheus, and Grafana.
-
 | URL | Service |
 |---|---|
 | http://localhost:3000 | **Storefront** (Next.js) |
-| http://localhost:4001 | Product Service API |
-| http://localhost:4002 | Inventory Service API |
-| http://localhost:4003 | Checkout Service API |
-| http://localhost:4004 | Payment Service API |
-| http://localhost:4005 | Order Service API |
-| http://localhost:15672 | RabbitMQ Management (`user`/`password`) |
 | http://localhost:9090 | Prometheus |
 | http://localhost:3001 | Grafana (`admin`/`admin`) |
 
 ### Local Development (hot-reload)
 
 ```powershell
-# Install dependencies
 pnpm install
-
-# Start infrastructure (Postgres, Redis, RabbitMQ)
-docker compose -f infra/docker-compose/docker-compose.yml up postgres redis rabbitmq -d
-
-# Run all services with hot-reload
+docker compose -f infra/docker-compose/docker-compose.yml up redis rabbitmq -d
 .\start-dev.ps1
-```
-
-### Seed Product Data
-
-```bash
-pnpm --filter @flashforge/product-service exec prisma migrate deploy
-pnpm --filter @flashforge/product-service exec ts-node prisma/seed.ts
-
-pnpm --filter @flashforge/inventory-service exec prisma migrate deploy
-pnpm --filter @flashforge/inventory-service exec ts-node prisma/seed.ts
 ```
 
 ---
 
-## 🏗️ Architecture
+## ☁️ Production Deployment (AWS)
 
-See [docs/architecture.md](docs/architecture.md) for the full design.
+### Infrastructure (Terraform)
 
+```bash
+cd infra/terraform
+terraform init
+terraform apply    # Provisions VPC, EC2, EIP, SSM, CloudFront
 ```
-Browser
-  │
-  ▼
-Next.js Frontend (3000)
-  │
-  ├─► Product Service (4001)  ──► PostgreSQL (products)
-  │
-  ├─► Inventory Service (4002) ─► PostgreSQL (inventory)
-  │                              Redis (TTL reservation locks)
-  │
-  └─► Checkout Service (4003) ──► Inventory Service (reserve)
-                                  Payment Service (charge)
-                                  RabbitMQ (payment_completed / payment_failed)
-                                     │
-                                     ▼
-                               Worker Service (4006)
-                                  │
-                                  ├─► Order Service (4005) ──► PostgreSQL (orders)
-                                  └─► Inventory Service (commit/release)
+
+Terraform provisions:
+- **VPC** with public subnet in `ap-south-1`
+- **EC2 t3.micro** with IAM role for SSM access
+- **Elastic IP** for stable addressing
+- **CloudFront distribution** fronting EC2 on port 80
+- **SSM Parameter Store** for all secrets (DB URLs, Redis, RabbitMQ, `METRICS_TOKEN`)
+
+### Secrets Management (AWS SSM)
+
+All secrets live in SSM Parameter Store under `/flashforge/*`:
+
+```bash
+# Fetch a secret manually
+aws ssm get-parameter --name /flashforge/METRICS_TOKEN --with-decryption --output text
 ```
+
+### Deploy
+
+The GitHub Actions workflow (`deploy.yml`) on push to `main`:
+1. Builds Docker images → pushes to **GHCR**
+2. SCPs `docker-compose.prod.yml` + `nginx.conf` to EC2
+3. SSH: `docker compose pull && docker compose up -d`
 
 ---
 
 ## 🔑 Key Design Decisions
 
 ### 1. Inventory Reservation with TTL (No Oversell)
-Inventory is **reserved** (not decremented) in Redis with a 10-minute TTL before checkout. This means:
+Inventory is **reserved** (not decremented) in Redis with a 10-minute TTL before checkout:
 - Concurrent requests see correct stock levels
 - Abandoned carts auto-release after TTL
 - Actual decrement only happens after payment confirmation
@@ -112,29 +178,43 @@ Inventory is **reserved** (not decremented) in Redis with a 10-minute TTL before
 ### 2. Idempotent Payments
 Every payment request includes a `sessionId`. The payment service stores results keyed by `sessionId` — duplicate retries return the cached outcome, preventing double charges.
 
-### 3. Async Order Creation
-Checkout does not wait for order creation. Instead:
+### 3. Async Order Creation via Saga Pattern
+Checkout does not wait for order creation:
 1. Payment response is immediate (sync)
 2. A `payment_completed` event is published to RabbitMQ
 3. Worker Service consumes it and creates the order
-4. This keeps checkout latency low and order creation reliable
+4. **payment_failed** → Worker releases inventory reservation (compensating transaction)
 
-### 4. Saga Pattern (Worker Service)
-The worker implements a compensating saga:
-- **payment_completed** → create order + commit inventory
-- **payment_failed** → release inventory reservation
+### 4. Secure Metrics via CloudFront
+Production `/metrics` endpoints require a **Bearer token** (`METRICS_TOKEN`) and are exposed only through CloudFront HTTPS. Local Prometheus scrapes them using `authorization` config — no ports opened beyond 80.
 
 ---
 
 ## 📊 Observability
 
-### Prometheus Metrics
-All services expose `/metrics` with:
-- `http_requests_total` (by method, path, status_code)
-- `http_request_duration_seconds` (histogram for p50/p95/p99)
+### Prometheus Targets (Production)
+All services scraped via `https://dw7pv6mehop5x.cloudfront.net/metrics/<service>`:
+
+```yaml
+# prometheus.yml (snippet)
+- job_name: "product-service"
+  metrics_path: "/metrics/product"
+  scheme: "https"
+  authorization:
+    type: "Bearer"
+    credentials: "<METRICS_TOKEN>"
+  static_configs:
+    - targets: ["dw7pv6mehop5x.cloudfront.net"]
+```
+
+### Custom Metrics Exposed
+All services expose via `/metrics`:
+- `flashforge_http_requests_total` — labelled by `method`, `path`, `status_code`, `service`
+- `flashforge_http_request_duration_seconds` — histogram (p50/p95/p99)
+- `flashforge_nodejs_*` — Node.js runtime metrics
 
 ### Grafana Dashboard
-Auto-provisioned at http://localhost:3001 → **FlashForge Commerce / Service Overview**:
+Auto-provisioned at `http://localhost:3001` → **FlashForge Commerce / Service Overview**:
 - HTTP requests/sec per service
 - p95 latency per service
 - 5xx error rate
@@ -145,8 +225,6 @@ Auto-provisioned at http://localhost:3001 → **FlashForge Commerce / Service Ov
 ## 🧪 Load Testing
 
 ```bash
-# Install k6 — https://k6.io/docs/getting-started/installation/
-
 # Full checkout flow load test (progressive ramp → spike)
 k6 run load-tests/k6/checkout-load.js
 
@@ -167,22 +245,35 @@ k6 run load-tests/k6/inventory-stress.js
 ```
 FlashForge Commerce/
 ├── services/
-│   ├── product-service/     Port 4001 — Product CRUD
-│   ├── inventory-service/   Port 4002 — Stock reservation
+│   ├── product-service/     Port 4001 — Product CRUD + /metrics
+│   ├── inventory-service/   Port 4002 — Stock reservation (Redis TTL)
 │   ├── checkout-service/    Port 4003 — Checkout orchestration
-│   ├── payment-service/     Port 4004 — Mock payment gateway
+│   ├── payment-service/     Port 4004 — Idempotent payment gateway
 │   ├── order-service/       Port 4005 — Order management
-│   └── worker-service/      Port 4006 — Async event consumers
-├── frontend/                Next.js 15 storefront
+│   └── worker-service/      Port 4006 — RabbitMQ saga consumer
+├── frontend/                Next.js 15 App Router storefront
 ├── packages/
 │   ├── shared-types/        Shared TypeScript interfaces
 │   ├── shared-config/       Env config helpers
 │   ├── shared-logger/       Structured Pino logging
-│   ├── shared-metrics/      Prometheus middleware
+│   ├── shared-metrics/      Prometheus middleware (prom-client)
 │   └── shared-rabbitmq/     RabbitMQ connection factory
 ├── infra/
-│   ├── docker-compose/      Full stack Compose + Prometheus + Grafana
-│   └── terraform/           AWS VPC foundation (+ phased tasks in SKILL.md)
+│   ├── docker-compose/      Docker Compose + Nginx + Prometheus + Grafana
+│   │   ├── docker-compose.yml        Local dev stack
+│   │   ├── docker-compose.prod.yml   Production stack
+│   │   ├── nginx.conf                Reverse proxy + /metrics routing
+│   │   └── prometheus.yml            Scrape config (CloudFront HTTPS)
+│   ├── terraform/
+│   │   ├── main.tf                   Root module (VPC + EC2 + CloudFront)
+│   │   └── modules/
+│   │       ├── vpc/                  VPC, subnet, IGW
+│   │       ├── ec2/                  Instance, SG, IAM, userdata
+│   │       ├── ssm/                  Parameter Store secrets
+│   │       └── cloudfront/           HTTPS CDN distribution
+│   └── scripts/
+│       └── setup-env.sh              Re-creates /etc/flashforge.env from SSM
+├── docs/screenshots/        Live project screenshots for README
 └── load-tests/k6/           k6 load & stress tests
 ```
 

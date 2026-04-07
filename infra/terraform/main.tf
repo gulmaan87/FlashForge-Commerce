@@ -42,3 +42,23 @@ module "ec2" {
   ec2_public_key   = var.ec2_public_key
   ghcr_owner       = var.ghcr_owner
 }
+
+# ── CloudFront Distribution (HTTPS) ───────────────────────────────────────────
+module "cloudfront" {
+  source = "./modules/cloudfront"
+
+  origin_domain_name = module.ec2.public_dns
+}
+
+# ── Additional Parameters ─────────────────────────────────────────────────────
+resource "aws_ssm_parameter" "cloudfront_domain" {
+  name  = "/flashforge/CLOUDFRONT_DOMAIN"
+  type  = "String"
+  value = module.cloudfront.domain_name
+}
+
+resource "aws_ssm_parameter" "metrics_token" {
+  name  = "/flashforge/METRICS_TOKEN"
+  type  = "SecureString"
+  value = "super-secret-metrics-token-12345"
+}

@@ -28,7 +28,8 @@ x-common-env: &common-env
   LOG_LEVEL: info
   REDIS_URL: ${REDIS_URL}
   RABBITMQ_URL: ${RABBITMQ_URL}
-  ALLOWED_ORIGINS: http://${EC2_PUBLIC_IP:-localhost}
+  ALLOWED_ORIGINS: https://${EC2_PUBLIC_IP:-localhost}
+  METRICS_TOKEN: ${METRICS_TOKEN}
 
 services:
   # ── Reverse proxy ────────────────────────────────────────────────────────
@@ -156,9 +157,9 @@ services:
       NODE_ENV: production
       PORT: "3000"
       # These are baked in at build time via ARG; set here for clarity
-      NEXT_PUBLIC_PRODUCT_SERVICE_URL: http://${EC2_PUBLIC_IP:-localhost}/api/products
-      NEXT_PUBLIC_CHECKOUT_SERVICE_URL: http://${EC2_PUBLIC_IP:-localhost}/api/checkout
-      NEXT_PUBLIC_ORDER_SERVICE_URL: http://${EC2_PUBLIC_IP:-localhost}/api/orders
+      NEXT_PUBLIC_PRODUCT_SERVICE_URL: https://${EC2_PUBLIC_IP:-localhost}/api/products
+      NEXT_PUBLIC_CHECKOUT_SERVICE_URL: https://${EC2_PUBLIC_IP:-localhost}/api/checkout
+      NEXT_PUBLIC_ORDER_SERVICE_URL: https://${EC2_PUBLIC_IP:-localhost}/api/orders
     expose:
       - "3000"
     depends_on:

@@ -22,3 +22,8 @@ output "ssm_parameter_names" {
   description = "Map of secret names stored in SSM Parameter Store."
   value       = module.ssm.parameter_names
 }
+
+output "cloudfront_domain" {
+  description = "The CloudFront domain name"
+  value       = module.cloudfront.domain_name
+}
