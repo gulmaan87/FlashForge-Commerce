@@ -23,7 +23,10 @@
 ---
 
 ### 📦 Storefront Features
-![Storefront Features](docs/screenshots/storefront_features.png)
+<img width="1919" height="860" alt="Screenshot 2026-03-29 171833" src="https://github.com/user-attachments/assets/5ac848b9-2a59-4010-8921-f637011d6b7e" />
+<img width="1919" height="855" alt="Screenshot 2026-03-29 171847" src="https://github.com/user-attachments/assets/3c8e4355-9c98-412c-8449-29eea705588d" /><img width="1919" height="858" alt="Screenshot 2026-03-29 171859" src="https://github.com/user-attachments/assets/8033886b-13c0-4d85-bfd8-2429fa589a79" />
+
+
 > Instant Checkout (idempotent API design), Safe & Secure payments, and Real-time Stock tracking across microservices.
 
 ---
