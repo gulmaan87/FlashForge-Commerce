@@ -35,7 +35,8 @@
 ---
 
 ### 📊 Grafana — Service Overview Dashboard
-![Grafana Dashboard](docs/screenshots/grafana_dashboard.png)
+<img width="1902" height="859" alt="grafana_dashboard" src="https://github.com/user-attachments/assets/47aced23-cb64-4ea1-80a7-e71fe3f66360" />
+
 > Auto-provisioned Grafana dashboard at `localhost:3001` connected to Prometheus, with panels for HTTP Requests/sec, p95 Latency, 5xx Error Rate, and Checkout/Payment Success Rate.
 
 ---
