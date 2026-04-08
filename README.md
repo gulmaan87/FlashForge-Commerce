@@ -46,59 +46,13 @@
 
 ---
 
-## ✨ What's Inside
 
-| Layer | Technology |
-|---|---|
-| **Services** | 6 TypeScript/Express microservices |
-| **Frontend** | Next.js 15 App Router storefront |
-| **Database** | MongoDB Atlas (per-service collections) |
-| **Cache / Locks** | Upstash Redis (TTL-based inventory reservation) |
-| **Messaging** | CloudAMQP RabbitMQ (async payment → order pipeline) |
-| **Observability** | Prometheus + Grafana (scraped via CloudFront) |
-| **Load Testing** | k6 |
-| **Containers** | Docker Compose (local + production) |
-| **Cloud** | AWS EC2 (`t3.micro`) + **CloudFront CDN (HTTPS)** |
-| **IaC** | Terraform (VPC, EC2, EIP, SSM, CloudFront) |
-| **Secrets** | AWS SSM Parameter Store (SecureString) |
-| **Monorepo** | pnpm workspaces + shared packages |
-| **CI/CD** | GitHub Actions → GHCR → EC2 via SSH |
-
----
 
 ## 🏗️ Architecture
 
 ```
-Browser / Prometheus (local)
-        │
-        ▼
-┌─────────────────────────────────────────┐
-│         AWS CloudFront (HTTPS)          │  ← TLS termination, CDN
-│     dw7pv6mehop5x.cloudfront.net        │
-└───────────────┬─────────────────────────┘
-                │ http (origin-only)
-                ▼
-┌───────────────────────────────────────────────────────┐
-│               AWS EC2 t3.micro (ap-south-1)           │
-│  ┌─────────────────────────────────────────────────┐  │
-│  │               Nginx (port 80)                   │  │
-│  │  /api/products  →  product-service:4001         │  │
-│  │  /api/inventory →  inventory-service:4002       │  │
-│  │  /api/checkout  →  checkout-service:4003        │  │
-│  │  /api/payments  →  payment-service:4004         │  │
-│  │  /api/orders    →  order-service:4005           │  │
-│  │  /metrics/*     →  <service>/metrics (authed)   │  │
-│  │  /              →  Next.js frontend:3000        │  │
-│  └─────────────────────────────────────────────────┘  │
-│                                                        │
-│  product-service ──► MongoDB Atlas (products)          │
-│  inventory-service ─► Upstash Redis (TTL locks)        │
-│  checkout-service ──► inventory + payment + RabbitMQ   │
-│  payment-service ───► MongoDB Atlas (payments)         │
-│  order-service ─────► MongoDB Atlas (orders)           │
-│  worker-service ────► RabbitMQ consumer (saga)         │
-└───────────────────────────────────────────────────────┘
-```
+
+<img width="1408" height="768" alt="architure" src="https://github.com/user-attachments/assets/ab85d5ff-cc41-4bd3-8bdd-9c6ae0b9e928" />
 
 ---
 
