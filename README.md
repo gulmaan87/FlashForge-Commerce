@@ -50,11 +50,10 @@
 
 ## 🏗️ Architecture
 
-```
+
 
 <img width="1408" height="768" alt="architure" src="https://github.com/user-attachments/assets/ab85d5ff-cc41-4bd3-8bdd-9c6ae0b9e928" />
 
----
 
 ## 🚀 Quick Start
 
