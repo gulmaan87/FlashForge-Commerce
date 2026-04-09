@@ -43,9 +43,9 @@ jobs:
             context: .
             dockerfile: frontend/Dockerfile
             build_args: |
-              NEXT_PUBLIC_PRODUCT_SERVICE_URL=http://35.154.247.227
-              NEXT_PUBLIC_CHECKOUT_SERVICE_URL=http://35.154.247.227
-              NEXT_PUBLIC_ORDER_SERVICE_URL=http://35.154.247.227
+              NEXT_PUBLIC_PRODUCT_SERVICE_URL=/api/products
+              NEXT_PUBLIC_CHECKOUT_SERVICE_URL=/api/checkout
+              NEXT_PUBLIC_ORDER_SERVICE_URL=/api/orders
 
     steps:
       - name: Checkout code
