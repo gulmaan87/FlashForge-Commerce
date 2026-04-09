@@ -93,8 +93,10 @@ services:
     expose:
       - "4003"
     depends_on:
-      - inventory-service
-      - payment-service
+      inventory-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:4003/health || exit 1"]
       interval: 15s
@@ -146,8 +148,10 @@ services:
     expose:
       - "4006"
     depends_on:
-      - order-service
-      - inventory-service
+      order-service:
+        condition: service_healthy
+      inventory-service:
+        condition: service_healthy
 
   # ── Frontend ─────────────────────────────────────────────────────────────
   frontend:

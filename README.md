@@ -54,6 +54,47 @@
 
 ## 🏗️ Architecture
 
+<<<<<<< Updated upstream
+=======
+```
+Browser / Prometheus (local)
+        │
+        ▼
+┌─────────────────────────────────────────┐
+│         AWS CloudFront (HTTPS)          │  ← TLS termination, CDN
+│     dw7pv6mehop5x.cloudfront.net        │
+└───────────────┬─────────────────────────┘
+                │ http (origin-only)
+                ▼
+┌───────────────────────────────────────────────────────────┐
+│               AWS EC2 t3.micro (ap-south-1)               │
+│  ┌───────────────────────────────────────────────────┐    │
+│  │         Nginx (port 80) — auto worker procs       │    │
+│  │  /api/products  →  product-service:4001           │    │
+│  │  /api/inventory →  inventory-service:4002         │    │
+│  │  /api/checkout  →  checkout-service:4003 ⚡RL    │    │
+│  │  /api/payments  →  payment-service:4004           │    │
+│  │  /api/orders    →  order-service:4005             │    │
+│  │  /metrics/*     →  <service>/metrics (authed)     │    │
+│  │  /              →  Next.js frontend:3000          │    │
+│  └───────────────────────────────────────────────────┘    │
+│                                                            │
+│  product-service   ──► MongoDB Atlas (products)           │
+│  inventory-service ──► MongoDB Atlas (inventory, Prisma)  │
+│  checkout-service  ──► ⚡inventory-service (CB*)          │
+│                    ──► ⚡payment-service  (CB*)           │
+│                    ──► CloudAMQP RabbitMQ                 │
+│  payment-service   ──► MongoDB Atlas (payments)           │
+│  order-service     ──► MongoDB Atlas (orders)             │
+│  worker-service    ──► RabbitMQ [main→retry→DLQ]         │
+│                    ──► order-service + inventory-service  │
+└───────────────────────────────────────────────────────────┘
+
+⚡RL = Nginx rate-limited (20 req/s per IP, burst 30)
+CB*  = opossum circuit breaker (5s timeout, trips at 50% errors, resets in 15s)
+DLQ  = 3-attempt retry with 5s TTL delay before permanent dead-letter queue
+```
+>>>>>>> Stashed changes
 
 
 <img width="1408" height="768" alt="architure" src="https://github.com/user-attachments/assets/ab85d5ff-cc41-4bd3-8bdd-9c6ae0b9e928" />
@@ -145,6 +186,29 @@ Checkout does not wait for order creation:
 ### 4. Secure Metrics via CloudFront
 Production `/metrics` endpoints require a **Bearer token** (`METRICS_TOKEN`) and are exposed only through CloudFront HTTPS. Local Prometheus scrapes them using `authorization` config — no ports opened beyond 80.
 
+### 5. Circuit Breakers on Inter-Service HTTP Calls
+`checkout-service` wraps all calls to `inventory-service` and `payment-service` in **opossum circuit breakers**:
+- Trips after 50% error rate over a 10-second window (min. 5 requests)
+- Open breaker fails immediately (no 30s Nginx timeout hang)
+- Automatically probes after 15s and closes on recovery
+- Logs state transitions (`OPEN → HALF-OPEN → CLOSED`) for observability
+
+### 6. RabbitMQ Three-Tier Message Topology
+Failed messages are never silently dropped:
+1. **Main queue** → message nacked → goes to **retry queue** (5s TTL)
+2. **Retry queue** → TTL expires → re-delivered to main queue
+3. After **3 attempts**, message routes to **permanent DLQ** (`.dlq`)
+
+Workers use `channel.prefetch(1)` to prevent a single stuck message from blocking the entire consumer.
+
+### 7. Health-Gated Service Startup
+`docker-compose.prod.yml` uses `condition: service_healthy` on all critical `depends_on` entries — checkout only starts accepting traffic after inventory and payment confirm `/health` returns 200.
+
+### 8. Hardened Infrastructure
+- **Nginx**: `worker_processes auto` (all cores), `worker_connections 1024`, rate-limiting on `/api/checkout` (20 req/s per IP, burst 30)
+- **Security Group**: SSH port 22 removed — access via `aws ssm start-session` (no open internet ports beyond HTTP 80)
+- **Terraform state**: S3 backend config ready-to-enable in `versions.tf` with a `bootstrap-state.sh` provisioning script
+
 ---
 
 ## 📊 Observability
@@ -169,6 +233,17 @@ All services expose via `/metrics`:
 - `flashforge_http_requests_total` — labelled by `method`, `path`, `status_code`, `service`
 - `flashforge_http_request_duration_seconds` — histogram (p50/p95/p99)
 - `flashforge_nodejs_*` — Node.js runtime metrics
+
+### Alerting Rules (`infra/docker-compose/alerts.yml`)
+Prometheus evaluates alerting rules every 15s covering:
+- **ServiceDown** — any scrape target unreachable for >1 min (critical)
+- **CheckoutHighErrorRate** — checkout 5xx rate >5% for 2 min (critical)
+- **PaymentHighErrorRate** — payment 5xx rate >2% for 2 min (critical)
+- **CheckoutHighLatency** — p95 checkout latency >2s for 3 min (warning)
+- **HighHeapUsage** — Node.js heap >90% for 5 min (warning)
+- **HighEventLoopLag** — event loop lag >500ms for 3 min (warning)
+
+> To route alerts to Slack/email, add an Alertmanager service and configure `alerting:` in `prometheus.yml`.
 
 ### Grafana Dashboard
 Auto-provisioned at `http://localhost:3001` → **FlashForge Commerce / Service Overview**:
@@ -203,29 +278,32 @@ k6 run load-tests/k6/inventory-stress.js
 FlashForge Commerce/
 ├── services/
 │   ├── product-service/     Port 4001 — Product CRUD + /metrics
-│   ├── inventory-service/   Port 4002 — Stock reservation (Redis TTL)
-│   ├── checkout-service/    Port 4003 — Checkout orchestration
+│   ├── inventory-service/   Port 4002 — Stock reservation (Prisma TX)
+│   ├── checkout-service/    Port 4003 — Checkout orchestration + circuit breakers
 │   ├── payment-service/     Port 4004 — Idempotent payment gateway
 │   ├── order-service/       Port 4005 — Order management
-│   └── worker-service/      Port 4006 — RabbitMQ saga consumer
+│   └── worker-service/      Port 4006 — RabbitMQ saga consumer (retry + DLQ)
 ├── frontend/                Next.js 15 App Router storefront
 ├── packages/
 │   ├── shared-types/        Shared TypeScript interfaces
 │   ├── shared-config/       Env config helpers
 │   ├── shared-logger/       Structured Pino logging
 │   ├── shared-metrics/      Prometheus middleware (prom-client)
-│   └── shared-rabbitmq/     RabbitMQ connection factory
+│   └── shared-rabbitmq/     RabbitMQ connection factory + retry topology
 ├── infra/
 │   ├── docker-compose/      Docker Compose + Nginx + Prometheus + Grafana
 │   │   ├── docker-compose.yml        Local dev stack
-│   │   ├── docker-compose.prod.yml   Production stack
-│   │   ├── nginx.conf                Reverse proxy + /metrics routing
-│   │   └── prometheus.yml            Scrape config (CloudFront HTTPS)
+│   │   ├── docker-compose.prod.yml   Production stack (health-gated startup)
+│   │   ├── nginx.conf                Reverse proxy + rate limiting + /metrics routing
+│   │   ├── prometheus.yml            Scrape config (CloudFront HTTPS) + alert rules
+│   │   └── alerts.yml                Prometheus alerting rules (latency, errors, health)
 │   ├── terraform/
 │   │   ├── main.tf                   Root module (VPC + EC2 + CloudFront)
+│   │   ├── versions.tf               Provider versions + S3 backend (ready to enable)
+│   │   ├── bootstrap-state.sh        One-command S3 + DynamoDB state backend setup
 │   │   └── modules/
 │   │       ├── vpc/                  VPC, subnet, IGW
-│   │       ├── ec2/                  Instance, SG, IAM, userdata
+│   │       ├── ec2/                  Instance, SG (SSH removed), IAM, userdata
 │   │       ├── ssm/                  Parameter Store secrets
 │   │       └── cloudfront/           HTTPS CDN distribution
 │   └── scripts/

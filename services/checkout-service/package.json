@@ -18,10 +18,12 @@
     "@flashforge/shared-types": "workspace:*",
     "@prisma/client": "5",
     "@types/cors": "^2.8.19",
+    "@types/opossum": "^8.1.9",
     "axios": "^1.13.6",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^4.21.2",
+    "opossum": "^9.0.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

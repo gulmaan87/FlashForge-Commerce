@@ -158,6 +158,9 @@ importers:
       '@types/cors':
         specifier: ^2.8.19
         version: 2.8.19
+      '@types/opossum':
+        specifier: ^8.1.9
+        version: 8.1.9
       axios:
         specifier: ^1.13.6
         version: 1.13.6
@@ -170,6 +173,9 @@ importers:
       express:
         specifier: ^4.21.2
         version: 4.22.1
+      opossum:
+        specifier: ^9.0.0
+        version: 9.0.0
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -637,6 +643,9 @@ packages:
 
   '@types/node@22.19.15':
     resolution: {integrity: sha512-F0R/h2+dsy5wJAUe3tAU6oqa2qbWY5TpNfL/RGmo1y38hiyO1w3x2jPtt76wmuaJI4DQnOBu21cNXQ2STIUUWg==}
+
+  '@types/opossum@8.1.9':
+    resolution: {integrity: sha512-Jm/tYxuJFefiwRYs+/EOsUP3ktk0c8siMgAHPLnA4PXF4wKghzcjqf88dY+Xii5jId5Txw4JV0FMKTpjbd7KJA==}
 
   '@types/pino-http@6.1.0':
     resolution: {integrity: sha512-rjPOSk2yI0714Pi8LdjIhDynXWqOvswmjRiTHj/1TOh1+0R26aKJ8vAVZRc4Ky5dQ5M5Bly1vrV/Klew6lThkA==}
@@ -1403,6 +1412,10 @@ packages:
     resolution: {integrity: sha512-oVlzkg3ENAhCk2zdv7IJwd/QUD4z2RxRwpkcGY8psCVcCYZNq4wYnVWALHM+brtuJjePWiYF/ClmuDr8Ch5+kg==}
     engines: {node: '>= 0.8'}
 
+  opossum@9.0.0:
+    resolution: {integrity: sha512-K76U0QkxOfUZamneQuzz+AP0fyfTJcCplZ2oZL93nxeupuJbN4s6uFNbmVCt4eWqqGqRnnowdFuBicJ1fLMVxw==}
+    engines: {node: ^24 || ^22 || ^20}
+
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
@@ -2084,6 +2097,10 @@ snapshots:
   '@types/node@22.19.15':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/opossum@8.1.9':
+    dependencies:
+      '@types/node': 22.19.15
 
   '@types/pino-http@6.1.0':
     dependencies:
@@ -2805,6 +2822,8 @@ snapshots:
   on-finished@2.4.1:
     dependencies:
       ee-first: 1.1.1
+
+  opossum@9.0.0: {}
 
   optionator@0.9.4:
     dependencies:

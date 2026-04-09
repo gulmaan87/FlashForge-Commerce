@@ -6,12 +6,50 @@ const logger = createLogger('shared-rabbitmq');
 export const FLASHFORGE_EVENTS_EXCHANGE = 'flashforge.events';
 export const DLQ_EXCHANGE = 'flashforge.dlq';
 
+/**
+ * Maximum number of delivery attempts before a message is permanently
+ * dead-lettered. RabbitMQ increments the x-death count automatically each
+ * time a message is nack'd and re-routed via the DLX.
+ */
+export const MAX_RETRY_ATTEMPTS = 3;
+
+/**
+ * How long (ms) a failed message waits in the retry holding queue before
+ * being re-delivered. Uses a simple fixed delay — good enough for most cases.
+ */
+export const RETRY_DELAY_MS = 5_000; // 5 seconds
+
 export interface RabbitMQConfig {
   url: string;
   /** Max reconnect attempts before giving up (default: Infinity) */
   maxRetries?: number;
   /** Initial backoff in ms — doubles each attempt, caps at 30 s (default: 1000) */
   initialBackoffMs?: number;
+}
+
+/**
+ * Inspect the x-death header RabbitMQ automatically appends to determine how
+ * many times this message has already been rejected.
+ *
+ * Returns the total death count across all queues so callers can decide
+ * whether to requeue or permanently dead-letter a message.
+ */
+export function getDeathCount(msg: amqp.ConsumeMessage): number {
+  const xDeath = msg.properties?.headers?.['x-death'];
+  if (!Array.isArray(xDeath)) return 0;
+  return xDeath.reduce((sum: number, entry: { count?: number }) => sum + (entry.count ?? 0), 0);
+}
+
+/**
+ * Decide how to handle a processing failure for a consumed message.
+ *
+ * - If below MAX_RETRY_ATTEMPTS → requeue=false nack (goes to DLX → retry queue)
+ * - If at or above MAX_RETRY_ATTEMPTS → requeue=false nack (goes to DLX → permanent DLQ)
+ *
+ * The caller handles the actual channel.nack() call so it keeps full control.
+ */
+export function shouldRetry(msg: amqp.ConsumeMessage): boolean {
+  return getDeathCount(msg) < MAX_RETRY_ATTEMPTS;
 }
 
 let _config: RabbitMQConfig | null = null;
@@ -122,14 +160,30 @@ export async function setupQueue(queueName: string, routingKeys: string[]) {
     throw new Error('RabbitMQ channel is not initialized — call connectRabbitMQ first');
   }
 
+  // ── 1. Permanent DLQ — messages land here after all retries exhausted ────────
   const dlqName = `${queueName}.dlq`;
-
   await channel.assertQueue(dlqName, { durable: true });
-  await channel.bindQueue(dlqName, DLQ_EXCHANGE, '#');
+  await channel.bindQueue(dlqName, DLQ_EXCHANGE, dlqName);
 
+  // ── 2. Retry holding queue — holds a failed message for RETRY_DELAY_MS then
+  //    re-routes it back to the main queue via its own DLX. This gives downstream
+  //    services time to recover before the next delivery attempt.
+  const retryQueueName = `${queueName}.retry`;
+  const RETRY_EXCHANGE = 'flashforge.retry';
+  await channel.assertExchange(RETRY_EXCHANGE, 'direct', { durable: true });
+
+  await channel.assertQueue(retryQueueName, {
+    durable: true,
+    messageTtl: RETRY_DELAY_MS,          // wait here before re-delivery
+    deadLetterExchange: FLASHFORGE_EVENTS_EXCHANGE, // re-route back to main exchange
+    deadLetterRoutingKey: routingKeys[0], // re-deliver to first routing key
+  });
+  await channel.bindQueue(retryQueueName, RETRY_EXCHANGE, queueName);
+
+  // ── 3. Main queue — DLX routes to retry queue (not permanent DLQ directly) ───
   const q = await channel.assertQueue(queueName, {
     durable: true,
-    deadLetterExchange: DLQ_EXCHANGE,
+    deadLetterExchange: RETRY_EXCHANGE,  // on nack → retry queue
     deadLetterRoutingKey: queueName,
   });
 
@@ -137,6 +191,7 @@ export async function setupQueue(queueName: string, routingKeys: string[]) {
     await channel.bindQueue(q.queue, FLASHFORGE_EVENTS_EXCHANGE, rk);
   }
 
+  logger.info({ queueName, retryQueueName, dlqName, maxRetries: MAX_RETRY_ATTEMPTS }, 'Queue topology set up');
   return q.queue;
 }
 

@@ -23,16 +23,13 @@ data "aws_ami" "al2023" {
 # ── Security Group ────────────────────────────────────────────────────────────
 resource "aws_security_group" "server" {
   name        = "${var.name_prefix}-server-sg"
-  description = "Allow SSH + HTTP inbound. All outbound."
+  description = "Allow HTTP inbound. All outbound. SSH removed — use SSM Session Manager instead."
   vpc_id      = var.vpc_id
 
-  ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]   # Restrict to your IP in production
-  }
+  # ── SSH intentionally removed ─────────────────────────────────────────────
+  # The EC2 IAM role grants SSM access. Use:
+  #   aws ssm start-session --target <instance-id>
+  # This gives a full shell without opening port 22 to the internet.
 
   ingress {
     description = "HTTP"

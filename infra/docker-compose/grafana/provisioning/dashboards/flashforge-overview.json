@@ -2,19 +2,21 @@
   "title": "FlashForge Commerce — Service Overview",
   "uid": "flashforge-overview",
   "schemaVersion": 36,
-  "version": 1,
+  "version": 3,
   "refresh": "10s",
-  "time": { "from": "now-15m", "to": "now" },
+  "time": { "from": "now-1h", "to": "now" },
   "panels": [
     {
       "id": 1,
       "title": "HTTP Requests / sec (all services)",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total[1m])) by (service)",
-          "legendFormat": "{{service}}"
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "sum(rate(flashforge_http_requests_total[1m])) by (job)",
+          "legendFormat": "{{job}}"
         }
       ]
     },
@@ -23,22 +25,29 @@
       "title": "Request Latency p95 (all services, ms)",
       "type": "timeseries",
       "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1m])) by (le, service)) * 1000",
-          "legendFormat": "{{service}} p95"
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "histogram_quantile(0.95, sum(rate(flashforge_http_request_duration_seconds_bucket[1m])) by (le, job)) * 1000",
+          "legendFormat": "{{job}} p95"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ms" }
+      }
     },
     {
       "id": 3,
       "title": "HTTP Error Rate (5xx)",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[1m])) by (service)",
-          "legendFormat": "{{service}} errors"
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "sum(rate(flashforge_http_requests_total{status_code=~\"5..\"}[1m])) by (job)",
+          "legendFormat": "{{job}} errors"
         }
       ]
     },
@@ -47,9 +56,11 @@
       "title": "Checkout Success Rate",
       "type": "stat",
       "gridPos": { "x": 12, "y": 8, "w": 6, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
       "targets": [
         {
-          "expr": "rate(http_requests_total{service=\"checkout-service\", status_code=\"200\"}[5m]) / rate(http_requests_total{service=\"checkout-service\"}[5m]) * 100"
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "rate(flashforge_http_requests_total{job=\"checkout-service\", status_code=\"200\"}[5m]) / rate(flashforge_http_requests_total{job=\"checkout-service\"}[5m]) * 100"
         }
       ],
       "fieldConfig": {
@@ -70,9 +81,11 @@
       "title": "Payment Success Rate",
       "type": "stat",
       "gridPos": { "x": 18, "y": 8, "w": 6, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
       "targets": [
         {
-          "expr": "rate(http_requests_total{service=\"payment-service\", status_code=\"200\"}[5m]) / rate(http_requests_total{service=\"payment-service\"}[5m]) * 100"
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "rate(flashforge_http_requests_total{job=\"payment-service\", status_code=\"200\"}[5m]) / rate(flashforge_http_requests_total{job=\"payment-service\"}[5m]) * 100"
         }
       ],
       "fieldConfig": {
@@ -86,6 +99,48 @@
             ]
           }
         }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Active Services (UP)",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 16, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "count(up{job!=\"prometheus\"} == 1)",
+          "legendFormat": "Services UP"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "yellow", "value": 3 },
+              { "color": "green", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Total Requests (last 5m)",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 16, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus-uid" },
+          "expr": "sum(increase(flashforge_http_requests_total[5m]))",
+          "legendFormat": "Total Requests"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short" }
       }
     }
   ]
