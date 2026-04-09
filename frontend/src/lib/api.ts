@@ -7,9 +7,11 @@ import type {
   ApiResponse,
 } from './types';
 
-const PRODUCT_URL  = process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL  !== undefined ? process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL : 'http://localhost:4001';
-const CHECKOUT_URL = process.env.NEXT_PUBLIC_CHECKOUT_SERVICE_URL !== undefined ? process.env.NEXT_PUBLIC_CHECKOUT_SERVICE_URL : 'http://localhost:4003';
-const ORDER_URL    = process.env.NEXT_PUBLIC_ORDER_SERVICE_URL    !== undefined ? process.env.NEXT_PUBLIC_ORDER_SERVICE_URL : 'http://localhost:4005';
+const isProd = process.env.NODE_ENV === 'production';
+
+const PRODUCT_URL  = isProd ? '' : (process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL  || 'http://localhost:4001');
+const CHECKOUT_URL = isProd ? '' : (process.env.NEXT_PUBLIC_CHECKOUT_SERVICE_URL || 'http://localhost:4003');
+const ORDER_URL    = isProd ? '' : (process.env.NEXT_PUBLIC_ORDER_SERVICE_URL    || 'http://localhost:4005');
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function unwrap<T>(res: { data: ApiResponse<T> }): T {
