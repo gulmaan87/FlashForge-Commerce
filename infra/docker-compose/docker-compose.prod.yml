@@ -28,7 +28,7 @@ x-common-env: &common-env
   LOG_LEVEL: info
   REDIS_URL: ${REDIS_URL}
   RABBITMQ_URL: ${RABBITMQ_URL}
-  ALLOWED_ORIGINS: https://${EC2_PUBLIC_IP:-localhost}
+  ALLOWED_ORIGINS: https://dw7pv6mehop5x.cloudfront.net,http://${EC2_PUBLIC_IP:-localhost},https://${EC2_PUBLIC_IP:-localhost}
   METRICS_TOKEN: ${METRICS_TOKEN}
 
 services:
