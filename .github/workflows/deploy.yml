@@ -86,6 +86,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Fix permissions before copy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo mkdir -p /opt/flashforge
+            sudo chown -R ec2-user:ec2-user /opt/flashforge
+
       - name: Copy compose files to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -105,9 +115,6 @@ jobs:
           script: |
             set -euo pipefail
             cd /opt/flashforge
-
-            # Take ownership of deploy dir (created by root in userdata bootstrap)
-            sudo chown -R ec2-user:ec2-user /opt/flashforge
 
             # Build .env — use printf so all content stays indented within YAML
             export AWS_DEFAULT_REGION=ap-south-1
