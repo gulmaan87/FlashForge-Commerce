@@ -9,13 +9,13 @@ env:
   GHCR_OWNER: ${{ github.repository_owner }}
 
 jobs:
-  # ── Job 1: Build all Docker images in parallel & push to GHCR ─────────────
+
   build:
     name: Build ${{ matrix.service }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write   # required to push to ghcr.io
+      packages: write
 
     strategy:
       fail-fast: false
@@ -74,7 +74,7 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to:   type=gha,scope=${{ matrix.service }},mode=max
 
-  # ── Job 2: Deploy to EC2 after all images are built ─────────────────────────
+
   deploy:
     name: Deploy to EC2
     runs-on: ubuntu-latest
@@ -104,7 +104,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "infra/docker-compose/docker-compose.prod.yml,infra/docker-compose/nginx.conf"
           target: "/opt/flashforge/"
-          strip_components: 2   # copies files directly into /opt/flashforge/
+          strip_components: 2
 
       - name: Pull images & restart stack
         uses: appleboy/ssh-action@v1.0.3
@@ -116,7 +116,7 @@ jobs:
             set -euo pipefail
             cd /opt/flashforge
 
-            # Build .env — use printf so all content stays indented within YAML
+
             export AWS_DEFAULT_REGION=ap-south-1
             printf 'GHCR_OWNER=gulmaan87\nIMAGE_TAG=latest\n' > .env
             echo "DATABASE_URL_PRODUCT=$(aws ssm get-parameter --name /flashforge/DATABASE_URL_PRODUCT --with-decryption --query Parameter.Value --output text)" >> .env
@@ -127,16 +127,16 @@ jobs:
             echo "REDIS_URL=$(aws ssm get-parameter --name /flashforge/REDIS_URL --with-decryption --query Parameter.Value --output text)" >> .env
             echo "RABBITMQ_URL=$(aws ssm get-parameter --name /flashforge/RABBITMQ_URL --with-decryption --query Parameter.Value --output text)" >> .env
 
-            # Log in to GHCR using a dedicated PAT (expression evaluated by Actions runner before SSH)
+
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-            # Pull latest images
+
             docker compose --env-file .env -f docker-compose.prod.yml pull
 
-            # Recreate changed containers
+
             docker compose --env-file .env -f docker-compose.prod.yml up -d --remove-orphans
 
-            # Clean up dangling images
+
             docker image prune -f
 
             echo "=== Deploy finished. Running containers: ==="

@@ -33,7 +33,7 @@ function StatusBadge({ status }: { status: Order['status'] }) {
 function OrderCard({ order }: { order: Order }) {
   return (
     <div className="glass-card" style={{ padding: 'clamp(1rem, 4vw, 1.5rem)' }}>
-      {/* Header row */}
+      {}
       <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
         <div className="min-w-0">
           <p className="font-semibold" style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}>Order</p>
@@ -44,7 +44,7 @@ function OrderCard({ order }: { order: Order }) {
         <StatusBadge status={order.status} />
       </div>
 
-      {/* Items */}
+      {}
       <div className="flex flex-col gap-2 mb-4">
         {order.items.map(item => (
           <div key={item.id} className="flex justify-between gap-4 text-sm flex-wrap" style={{ color: 'var(--text-secondary)' }}>
@@ -56,7 +56,7 @@ function OrderCard({ order }: { order: Order }) {
         ))}
       </div>
 
-      {/* Footer */}
+      {}
       <div className="flex items-center justify-between pt-3 flex-wrap gap-2" style={{ borderTop: '1px solid var(--border)' }}>
         <span style={{ fontSize: 'clamp(0.7rem, 1.5vw, 0.75rem)', color: 'var(--text-muted)' }}>
           {formatDate(order.createdAt)}
@@ -77,7 +77,7 @@ export default function OrdersPage() {
 
   return (
     <div className="page-wrapper" style={{ maxWidth: '52rem', paddingTop: 'clamp(1.5rem, 4vw, 2.5rem)' }}>
-      {/* Header */}
+      {}
       <div className="flex items-start sm:items-center justify-between gap-3 mb-6 sm:mb-8 flex-wrap">
         <div>
           <h1 className="font-display font-bold flex items-center gap-2 flex-wrap" style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)' }}>
@@ -94,7 +94,7 @@ export default function OrdersPage() {
         </Link>
       </div>
 
-      {/* Loading skeletons */}
+      {}
       {isLoading && (
         <div className="flex flex-col gap-4">
           {[...Array(3)].map((_, i) => (
@@ -107,7 +107,7 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {/* Error */}
+      {}
       {isError && (
         <div className="rounded-xl p-6 text-center"
           style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: 'var(--error)' }}>
@@ -118,7 +118,7 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {/* Empty state */}
+      {}
       {!isLoading && !isError && orders?.length === 0 && (
         <div className="flex flex-col items-center text-center py-16 gap-3" style={{ color: 'var(--text-muted)' }}>
           <p style={{ fontSize: 'clamp(2.5rem, 8vw, 3.5rem)' }}>📦</p>
@@ -128,7 +128,7 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {/* Orders list */}
+      {}
       {!isLoading && !isError && orders && orders.length > 0 && (
         <div className="flex flex-col gap-4">
           {orders.map(order => <OrderCard key={order.id} order={order} />)}

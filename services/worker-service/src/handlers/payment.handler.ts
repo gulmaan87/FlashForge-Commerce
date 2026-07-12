@@ -14,19 +14,19 @@ interface PaymentSuccessPayload {
   totalAmount: number;
 }
 
-/**
- * Handles the payment.success event emitted by checkout-service.
- *
- * Responsibilities:
- *  1. Create an Order record in order-service (idempotent via sessionId).
- *  2. Commit each inventory reservation so stock is permanently decremented.
- */
+
+
+
+
+
+
+
 export async function handlePaymentSuccess(payload: PaymentSuccessPayload) {
   const { sessionId, userId, reservationIds, cart, totalAmount } = payload;
 
   logger.info({ sessionId, userId }, 'Handling payment.success event');
 
-  // Step 1 — Create the order in order-service
+
   try {
     const idempotencyKey = `order-${sessionId}`;
     await axios.post(
@@ -47,17 +47,17 @@ export async function handlePaymentSuccess(payload: PaymentSuccessPayload) {
     );
     logger.info({ sessionId }, 'Order created successfully');
   } catch (err: any) {
-    // 409 means the order already exists (idempotency) — that's fine
+
     if (err?.response?.status === 409) {
       logger.warn({ sessionId }, 'Order already exists for session — skipping creation');
     } else {
       logger.error({ err, sessionId }, 'Failed to create order after payment success');
-      // Re-throw so the RabbitMQ consumer can nack/retry this message
+
       throw err;
     }
   }
 
-  // Step 2 — Commit inventory reservations
+
   const commitFailures: string[] = [];
   for (const reservationId of reservationIds) {
     try {
@@ -70,8 +70,8 @@ export async function handlePaymentSuccess(payload: PaymentSuccessPayload) {
   }
 
   if (commitFailures.length > 0) {
-    // Log but continue — order is already created. A separate reconciliation job
-    // or dead-letter queue should handle uncommitted reservations.
+
+
     logger.warn({ commitFailures, sessionId }, 'Some reservations could not be committed');
   }
 

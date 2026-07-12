@@ -1,24 +1,24 @@
-// ─── Products ───────────────────────────────────────────────────────────────
+
 export interface Product {
   id: string;
   name: string;
   description: string;
-  price: number; // price in cents
+  price: number;
   sku: string;
   imageUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-// ─── Cart ────────────────────────────────────────────────────────────────────
+
 export interface CartItem {
   productId: string;
   product: Product;
   quantity: number;
-  price: number; // price in cents
+  price: number;
 }
 
-// ─── Checkout ────────────────────────────────────────────────────────────────
+
 export interface CheckoutSession {
   id: string;
   sessionId: string;
@@ -36,7 +36,7 @@ export interface CartSessionItem {
   price: number;
 }
 
-// ─── Orders ──────────────────────────────────────────────────────────────────
+
 export interface Order {
   id: string;
   sessionId: string;
@@ -65,7 +65,7 @@ export interface OrderEvent {
   createdAt: string;
 }
 
-// ─── API Response wrapper ────────────────────────────────────────────────────
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;

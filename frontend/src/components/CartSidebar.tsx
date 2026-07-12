@@ -16,7 +16,7 @@ export default function CartSidebar() {
 
   return (
     <>
-      {/* Backdrop */}
+      {}
       <div
         className="fixed inset-0 z-50"
         style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
@@ -24,20 +24,20 @@ export default function CartSidebar() {
         aria-hidden="true"
       />
 
-      {/* Drawer — full width on xs, capped at 400px on sm+ */}
+      {}
       <aside
         className="animate-slideInRight fixed right-0 top-0 z-50 h-full flex flex-col cart-sidebar"
         style={{
           width: 'min(100vw, 400px)',
           background: 'var(--bg-secondary)',
           borderLeft: '1px solid var(--border)',
-          /* Safe area on notched phones */
+
           paddingRight: 'env(safe-area-inset-right)',
         }}
         role="dialog"
         aria-label="Shopping cart"
       >
-        {/* Header */}
+        {}
         <div
           className="flex items-center justify-between"
           style={{
@@ -64,7 +64,7 @@ export default function CartSidebar() {
           </button>
         </div>
 
-        {/* Items — scrollable */}
+        {}
         <div
           className="flex-1 overflow-y-auto"
           style={{ padding: 'clamp(0.75rem, 3vw, 1.25rem)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
@@ -89,7 +89,7 @@ export default function CartSidebar() {
                   padding: 'clamp(0.6rem, 2vw, 0.75rem)',
                 }}
               >
-                {/* Thumbnail */}
+                {}
                 <div
                   className="rounded-lg flex items-center justify-center text-xl flex-shrink-0"
                   style={{ width: 56, height: 56, background: 'var(--bg-secondary)', minWidth: 56 }}
@@ -103,9 +103,9 @@ export default function CartSidebar() {
                     ${formatPrice(item.price)} each
                   </p>
 
-                  {/* Controls row — wraps on tiny screens */}
+                  {}
                   <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
-                    {/* Qty */}
+                    {}
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => updateQty(item.productId, item.quantity - 1)}
@@ -146,7 +146,7 @@ export default function CartSidebar() {
           )}
         </div>
 
-        {/* Footer */}
+        {}
         {items.length > 0 && (
           <div
             style={{
@@ -158,13 +158,13 @@ export default function CartSidebar() {
               gap: '0.875rem',
             }}
           >
-            {/* Subtotal */}
+            {}
             <div className="flex justify-between text-sm" style={{ color: 'var(--text-secondary)' }}>
               <span>Subtotal</span>
               <span className="font-semibold text-white">${formatPrice(total)}</span>
             </div>
 
-            {/* Checkout */}
+            {}
             <Link href="/checkout" onClick={closeCart} className="block w-full">
               <button className="btn-accent w-full justify-center text-base">
                 Checkout

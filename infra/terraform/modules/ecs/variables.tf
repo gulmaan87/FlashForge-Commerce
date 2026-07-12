@@ -10,8 +10,8 @@ variable "services" {
     port        = number
     cpu         = number
     memory      = number
-    extra_env   = map(string)  # non-secret env, e.g. PORT, LOG_LEVEL, inter-service URLs
-    path_prefix = string       # ALB path-based routing prefix, e.g. "/api/products"
+    extra_env   = map(string)
+    path_prefix = string
   }))
 }
 

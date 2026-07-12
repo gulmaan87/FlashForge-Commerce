@@ -13,7 +13,7 @@ model Order {
   sessionId   String       @unique
   userId      String
   totalAmount Int
-  status      String       // CREATED, PAID, FAILED, CANCELLED
+  status      String
   items       OrderItem[]
   events      OrderEvent[]
   createdAt   DateTime     @default(now())

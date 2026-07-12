@@ -1,6 +1,6 @@
-# ─────────────────────────────────────────────────────
-# IAM: ECS Task Execution Role
-# ─────────────────────────────────────────────────────
+
+
+
 
 data "aws_iam_policy_document" "ecs_assume" {
   statement {
@@ -22,7 +22,7 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_managed" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Allow reading secrets from Secrets Manager
+
 resource "aws_iam_role_policy" "ecs_secrets" {
   name = "${var.name_prefix}-ecs-secrets"
   role = aws_iam_role.ecs_execution.id
@@ -37,9 +37,9 @@ resource "aws_iam_role_policy" "ecs_secrets" {
   })
 }
 
-# ─────────────────────────────────────────────────────
-# CloudWatch Log Groups
-# ─────────────────────────────────────────────────────
+
+
+
 
 resource "aws_cloudwatch_log_group" "services" {
   for_each          = var.services
@@ -47,9 +47,9 @@ resource "aws_cloudwatch_log_group" "services" {
   retention_in_days = 14
 }
 
-# ─────────────────────────────────────────────────────
-# ECS Cluster
-# ─────────────────────────────────────────────────────
+
+
+
 
 resource "aws_ecs_cluster" "this" {
   name = "${var.name_prefix}-cluster"
@@ -60,9 +60,9 @@ resource "aws_ecs_cluster" "this" {
   }
 }
 
-# ─────────────────────────────────────────────────────
-# Security Groups
-# ─────────────────────────────────────────────────────
+
+
+
 
 resource "aws_security_group" "alb" {
   name        = "${var.name_prefix}-alb-sg"
@@ -96,7 +96,7 @@ resource "aws_security_group" "services" {
   description = "Allow traffic from ALB and between FlashForge services"
   vpc_id      = var.vpc_id
 
-  # Allow all ports from ALB
+
   ingress {
     from_port       = 0
     to_port         = 65535
@@ -104,7 +104,7 @@ resource "aws_security_group" "services" {
     security_groups = [aws_security_group.alb.id]
   }
 
-  # Allow inter-service communication
+
   ingress {
     from_port = 0
     to_port   = 65535
@@ -120,9 +120,9 @@ resource "aws_security_group" "services" {
   }
 }
 
-# ─────────────────────────────────────────────────────
-# Application Load Balancer
-# ─────────────────────────────────────────────────────
+
+
+
 
 resource "aws_lb" "this" {
   name               = "${var.name_prefix}-alb"
@@ -158,14 +158,14 @@ resource "aws_lb_listener" "http" {
   port              = 80
   protocol          = "HTTP"
 
-  # Default: send to frontend
+
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.services["frontend"].arn
   }
 }
 
-# Path-based rules for each API service
+
 resource "aws_lb_listener_rule" "services" {
   for_each = { for k, v in var.services : k => v if v.path_prefix != "/" }
 
@@ -184,9 +184,9 @@ resource "aws_lb_listener_rule" "services" {
   }
 }
 
-# ─────────────────────────────────────────────────────
-# ECS Task Definitions + Services
-# ─────────────────────────────────────────────────────
+
+
+
 
 resource "aws_ecs_task_definition" "services" {
   for_each = var.services
@@ -208,13 +208,13 @@ resource "aws_ecs_task_definition" "services" {
       protocol      = "tcp"
     }]
 
-    # Inject plain (non-secret) env vars
+
     environment = [for k, v in merge(
       { NODE_ENV = "production", LOG_LEVEL = "info", PORT = tostring(each.value.port) },
       each.value.extra_env
     ) : { name = k, value = v }]
 
-    # Inject secrets from Secrets Manager as individual env vars
+
     secrets = lookup(var.secret_arns, each.key, null) != null ? [
       { name = "DATABASE_URL", valueFrom = "${var.secret_arns[each.key]}:DATABASE_URL::" },
       { name = "REDIS_URL", valueFrom = "${var.secret_arns[each.key]}:REDIS_URL::" },
@@ -242,7 +242,7 @@ resource "aws_ecs_service" "services" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = var.public_subnet_ids  # use public so containers can reach Mongo/Redis/AMQP without NAT
+    subnets          = var.public_subnet_ids
     security_groups  = [aws_security_group.services.id]
     assign_public_ip = true
   }
@@ -259,6 +259,6 @@ resource "aws_ecs_service" "services" {
   ]
 
   lifecycle {
-    ignore_changes = [desired_count, task_definition]  # managed by CI/CD after initial deploy
+    ignore_changes = [desired_count, task_definition]
   }
 }

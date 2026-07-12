@@ -13,7 +13,7 @@ function formatPrice(cents: number) { return (cents / 100).toFixed(2); }
 
 const DEMO_USER_ID = 'user-demo-001';
 
-/* ─── Step indicator ─── */
+
 function StepIndicator({ current }: { current: Step }) {
   const steps: { key: Step; label: string }[] = [
     { key: 'review',  label: 'Review' },
@@ -105,17 +105,17 @@ export default function CheckoutPage() {
     }
   }
 
-  /* ─── Review ─── */
+
   if (step === 'review') {
     return (
       <div className="page-wrapper" style={{ paddingTop: 'clamp(1.5rem, 4vw, 2.5rem)' }}>
         <h1 className="font-display font-bold mb-2" style={{ fontSize: 'clamp(1.6rem, 5vw, 2.25rem)' }}>Checkout</h1>
         <StepIndicator current="review" />
 
-        {/* Two-column on lg, stacked on mobile */}
+        {}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
 
-          {/* Order summary */}
+          {}
           <div className="lg:col-span-3 flex flex-col gap-4">
             <h2 className="font-semibold flex items-center gap-2" style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)' }}>
               <ShoppingBag className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--accent)' }} />
@@ -142,7 +142,7 @@ export default function CheckoutPage() {
               ))}
             </div>
 
-            {/* Totals */}
+            {}
             <div className="rounded-xl flex flex-col gap-2" style={{ padding: 'clamp(0.75rem, 3vw, 1rem)', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
               {[
                 { label: 'Subtotal', val: `$${formatPrice(total)}`,  accent: false },
@@ -161,7 +161,7 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Info form */}
+          {}
           <div className="lg:col-span-2 flex flex-col gap-4">
             <h2 className="font-semibold flex items-center gap-2" style={{ fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)' }}>
               <User className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--accent)' }} />
@@ -203,7 +203,7 @@ export default function CheckoutPage() {
     );
   }
 
-  /* ─── Payment ─── */
+
   if (step === 'payment') {
     return (
       <div className="page-wrapper" style={{ paddingTop: 'clamp(1.5rem, 4vw, 2.5rem)', maxWidth: '36rem' }}>
@@ -221,7 +221,7 @@ export default function CheckoutPage() {
             <input className="input-dark font-mono" value={form.card} onChange={e => setForm({ ...form, card: e.target.value })} maxLength={19} />
           </div>
 
-          {/* Expiry + CVV — 2 col on xs+, never wraps */}
+          {}
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Expiry</label>
@@ -261,7 +261,7 @@ export default function CheckoutPage() {
     );
   }
 
-  /* ─── Success ─── */
+
   return (
     <div className="page-wrapper flex flex-col items-center justify-center" style={{ paddingTop: 'clamp(3rem, 10vw, 6rem)', maxWidth: '36rem', textAlign: 'center' }}>
       <div className="glass-card w-full flex flex-col items-center gap-6" style={{ padding: 'clamp(2rem, 8vw, 3rem)' }}>
@@ -283,7 +283,7 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        {/* Buttons stack on xs, row on sm */}
+        {}
         <div className="flex flex-col sm:flex-row gap-3 w-full">
           <Link href="/orders" className="btn-accent flex-1 justify-center">View Orders</Link>
           <Link href="/" className="btn-ghost flex-1 justify-center">Shop More</Link>

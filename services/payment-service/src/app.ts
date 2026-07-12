@@ -6,7 +6,7 @@ import { metricsMiddleware, getMetrics } from '@flashforge/shared-metrics';
 
 const logger = createLogger('payment-service');
 
-// ─── CORS ─────────────────────────────────────────────────────────────────────
+
 const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? '')
   .split(',')
   .map(o => o.trim())
@@ -29,7 +29,7 @@ app.use(express.json());
 app.use(createRequestLogger(logger));
 app.use(metricsMiddleware());
 
-// ─── Observability routes ──────────────────────────────────────────────────────
+
 app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok', service: 'payment-service' });
 });
@@ -58,7 +58,7 @@ app.get('/ready', (_req, res) => {
 
 app.use('/api/payments', paymentRoutes);
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   logger.error(err, 'Unhandled error in request');
   if (!res.headersSent) {

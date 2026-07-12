@@ -34,12 +34,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <CartSidebar />
           <main className="min-h-screen">{children}</main>
 
-          {/* Footer */}
+          {}
           <footer
             className="relative mt-20 py-10 text-center overflow-hidden"
             style={{ borderTop: '1px solid rgba(249,115,22,0.1)' }}
           >
-            {/* Footer gradient bg */}
+            {}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{

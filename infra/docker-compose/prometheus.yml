@@ -2,21 +2,21 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
-# ── Alerting rules ────────────────────────────────────────────────────────────
-# alerts.yml is mounted via docker-compose volume (see docker-compose.yml)
-# To route these alerts to Slack/email, add an Alertmanager service and
-# configure alerting: section below pointing to it.
+
+
+
+
 rule_files:
   - /etc/prometheus/alerts.yml
 
 
 scrape_configs:
-  # ──────────────────────────── Self-monitoring ─────────────────────────────
+
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
 
-  # ── Remote AWS Services (via CloudFront) ──────────────────────────────────
+
   - job_name: "product-service"
     metrics_path: "/metrics/product"
     scheme: "https"

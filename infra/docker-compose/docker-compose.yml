@@ -1,13 +1,13 @@
 version: '3.8'
 
-# ─────────────────────────────────────────────────────────────────────────────
-# FlashForge Commerce — Full Docker Compose Stack
-# Boots: infrastructure + all 6 microservices + Next.js frontend
-# + Prometheus + Grafana observability
-#
-# Usage:
-#   docker compose -f infra/docker-compose/docker-compose.yml up --build
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
 
 x-service-defaults: &service-defaults
   restart: unless-stopped
@@ -22,7 +22,7 @@ x-app-env: &app-env
   NODE_ENV: production
 
 services:
-  # ───────────────────────────── Infrastructure ─────────────────────────────
+
 
   postgres:
     <<: *service-defaults
@@ -60,7 +60,7 @@ services:
       RABBITMQ_DEFAULT_PASS: password
     ports:
       - "5672:5672"
-      - "15672:15672"   # Management UI
+      - "15672:15672"
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
@@ -69,7 +69,7 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
-  # ───────────────────────────── Microservices ──────────────────────────────
+
 
   product-service:
     <<: *service-defaults
@@ -200,7 +200,7 @@ services:
       inventory-service:
         condition: service_healthy
 
-  # ───────────────────────────── Frontend ───────────────────────────────────
+
 
   frontend:
     <<: *service-defaults
@@ -220,7 +220,7 @@ services:
       checkout-service:
         condition: service_healthy
 
-  # ───────────────────────────── Observability ──────────────────────────────
+
 
   prometheus:
     <<: *service-defaults

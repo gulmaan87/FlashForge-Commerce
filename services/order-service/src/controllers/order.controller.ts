@@ -17,7 +17,7 @@ const createOrderSchema = z.object({
 
 export class OrderController {
   async create(req: Request, res: Response) {
-    // Basic idempotency mechanism using idempotency key header
+
     const idempotencyKey = req.headers['x-idempotency-key'] as string;
     if (!idempotencyKey) {
       return res.status(400).json({ success: false, error: { code: 'MISSING_IDEMPOTENCY_KEY', message: 'x-idempotency-key header required' } });
@@ -29,7 +29,7 @@ export class OrderController {
         return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid input', details: parsed.error.format() } });
       }
 
-      // In a real app we'd use a robust idempotency store for orders too, or rely on sessionId uniqueness
+
       const order = await orderService.createOrder(
         parsed.data.sessionId,
         parsed.data.userId,
@@ -40,7 +40,7 @@ export class OrderController {
       res.status(201).json({ success: true, data: order });
     } catch (error: any) {
       req.log.error(error, 'Failed to create order');
-      if (error.code === 'P2002') { // Prisma unique constraint violation (sessionId)
+      if (error.code === 'P2002') {
         res.status(409).json({ success: false, error: { code: 'CONCURRENT_REQUEST', message: 'Order already exists for this session' } });
       } else {
         res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Failed to create order' } });

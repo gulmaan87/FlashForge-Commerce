@@ -1,15 +1,15 @@
-# FlashForge Commerce - Start Without Docker
-# Run this script from the repo root: .\start-dev.ps1
-# Prerequisites: Node.js, pnpm, MongoDB (local or Atlas), Redis, RabbitMQ (all running)
+
+
+
 
 $root = $PSScriptRoot
 
 Write-Host "=== FlashForge Commerce - Dev Startup ===" -ForegroundColor Cyan
 Write-Host "Root: $root" -ForegroundColor Gray
 
-# -----------------------------------------------------------------------
-# Step 1: Generate Prisma clients for every service that has a schema
-# -----------------------------------------------------------------------
+
+
+
 Write-Host "`n[1/3] Generating Prisma clients..." -ForegroundColor Yellow
 
 $prismaServices = @("product-service","inventory-service","checkout-service","payment-service","order-service")
@@ -22,9 +22,9 @@ foreach ($svc in $prismaServices) {
     Pop-Location
 }
 
-# -----------------------------------------------------------------------
-# Step 2: Start each microservice in a new terminal window
-# -----------------------------------------------------------------------
+
+
+
 Write-Host "`n[2/3] Starting microservices..." -ForegroundColor Yellow
 
 $services = @(
@@ -43,9 +43,9 @@ foreach ($svc in $services) {
     Start-Sleep -Milliseconds 500
 }
 
-# -----------------------------------------------------------------------
-# Step 3: Start Next.js frontend
-# -----------------------------------------------------------------------
+
+
+
 Write-Host "`n[3/3] Starting frontend on http://localhost:3000..." -ForegroundColor Yellow
 
 $frontendPath = Join-Path $root "frontend"

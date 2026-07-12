@@ -148,7 +148,7 @@ const defaultProducts = [
 async function main() {
   console.log('Start seeding ...');
 
-  // Clear existing products
+
   await prisma.product.deleteMany({});
   console.log('Cleared existing products.');
 

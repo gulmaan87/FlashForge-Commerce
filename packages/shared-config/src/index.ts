@@ -2,7 +2,7 @@ import { z } from 'zod';
 import * as dotenv from 'dotenv';
 import path from 'path';
 
-// Load .env relative to the current working directory of the service starting
+
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const envSchema = z.object({

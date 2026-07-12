@@ -1,9 +1,9 @@
-# SSM Parameter Store — Standard tier (FREE)
-# Stores all FlashForge secrets as SecureString parameters.
-# EC2 instance role is granted read access to /flashforge/* path.
+
+
+
 
 locals {
-  # Build one DATABASE_URL per service using the shared Atlas cluster
+
   service_db_map = {
     PRODUCT   = "flashforge_products"
     INVENTORY = "flashforge_inventory"

@@ -16,8 +16,8 @@ process.on('uncaughtException', (err: Error) => {
 });
 
 async function main() {
-  // Connect RabbitMQ once at startup so published events never fail
-  // due to missing channel during a request.
+
+
   const rabbitmqUrl = getEnv('RABBITMQ_URL', 'amqp://guest:guest@rabbitmq:5672');
   await connectRabbitMQ({ url: rabbitmqUrl });
 

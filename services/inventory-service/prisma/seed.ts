@@ -28,7 +28,7 @@ async function fetchProductIds(): Promise<string[]> {
     console.warn('Could not reach product service — falling back to known IDs');
   }
 
-  // Fallback IDs (only used when product-service is not running)
+
   return [
     '69bacd6f51f76ad72605e308',
     '69ba17b67556d601f4c06d05',
@@ -43,7 +43,7 @@ async function main() {
   const productIds = await fetchProductIds();
   console.log(`\nSeeding inventory for ${productIds.length} products (DEFAULT_STOCK=${DEFAULT_STOCK})...`);
 
-  // ── Step 1: Remove stale inventory records for products that no longer exist ──
+
   const existing = await prisma.inventoryItem.findMany({ select: { id: true, productId: true } });
   const staleIds = existing
     .filter(item => !productIds.includes(item.productId))
@@ -54,12 +54,12 @@ async function main() {
     console.log(`🗑  Removed ${staleIds.length} stale inventory record(s).`);
   }
 
-  // ── Step 2: Upsert each current product ──
+
   for (const productId of productIds) {
     const item = await prisma.inventoryItem.upsert({
       where:  { productId },
       create: { productId, total: DEFAULT_STOCK },
-      // On re-run: only restore stock if it somehow hit 0; don't reset intentional deductions.
+
       update: { total: { set: DEFAULT_STOCK }, reserved: { set: 0 } },
     });
     const available = item.total - item.reserved;

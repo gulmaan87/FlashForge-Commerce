@@ -1,10 +1,10 @@
-# One secret per service with its own DATABASE_URL, plus shared REDIS and RABBITMQ
+
 
 resource "aws_secretsmanager_secret" "service_secrets" {
   for_each = var.service_db_names
 
   name                    = "flashforge/${each.key}"
-  recovery_window_in_days = 0 # allow instant delete in dev; set to 7+ in prod
+  recovery_window_in_days = 0
 
   tags = {
     Service = each.key

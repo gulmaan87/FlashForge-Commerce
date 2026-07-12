@@ -13,7 +13,7 @@ model CheckoutSession {
   userId        String
   cart          Json
   totalAmount   Int
-  status        String   // INITIATED, PAYMENT_PENDING, COMPLETED, FAILED
+  status        String
   reservationId String?
   paymentId     String?
   createdAt     DateTime @default(now())
