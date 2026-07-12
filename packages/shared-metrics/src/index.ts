@@ -3,13 +3,13 @@ import { Request, Response, NextFunction } from 'express';
 
 export const METRICS_PREFIX = 'flashforge_';
 
-// Initialize the default registry
+
 export const register = new promClient.Registry();
 
-// Add default node metrics (CPU, memory, etc.)
+
 promClient.collectDefaultMetrics({ register, prefix: METRICS_PREFIX });
 
-// Common metrics definitions
+
 export const httpRequestDurationMicroseconds = new promClient.Histogram({
   name: `${METRICS_PREFIX}http_request_duration_seconds`,
   help: 'Duration of HTTP requests in seconds',

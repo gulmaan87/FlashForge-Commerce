@@ -13,7 +13,7 @@ const PRODUCT_URL  = isProd ? '' : (process.env.NEXT_PUBLIC_PRODUCT_SERVICE_URL 
 const CHECKOUT_URL = isProd ? '' : (process.env.NEXT_PUBLIC_CHECKOUT_SERVICE_URL || 'http://localhost:4003');
 const ORDER_URL    = isProd ? '' : (process.env.NEXT_PUBLIC_ORDER_SERVICE_URL    || 'http://localhost:4005');
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 function unwrap<T>(res: { data: ApiResponse<T> }): T {
   if (!res.data.success || !res.data.data) {
     throw new Error(res.data.error?.message || 'Request failed');
@@ -21,7 +21,7 @@ function unwrap<T>(res: { data: ApiResponse<T> }): T {
   return res.data.data;
 }
 
-// ─── Product API ─────────────────────────────────────────────────────────────
+
 export const productApi = {
   getAll: async (): Promise<Product[]> => {
     const res = await axios.get<ApiResponse<Product[]>>(`${PRODUCT_URL}/api/products`);
@@ -33,7 +33,7 @@ export const productApi = {
   },
 };
 
-// ─── Checkout API ─────────────────────────────────────────────────────────────
+
 export const checkoutApi = {
   createSession: async (userId: string, cart: CartSessionItem[]): Promise<CheckoutSession> => {
     const res = await axios.post<ApiResponse<CheckoutSession>>(
@@ -58,7 +58,7 @@ export const checkoutApi = {
   },
 };
 
-// ─── Order API ────────────────────────────────────────────────────────────────
+
 export const orderApi = {
   getByUser: async (userId: string): Promise<Order[]> => {
     const res = await axios.get<ApiResponse<Order[]>>(

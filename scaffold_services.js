@@ -10,7 +10,7 @@ const write = (filePath, content) => {
 const services = ['product-service', 'inventory-service', 'checkout-service', 'payment-service', 'order-service', 'worker-service'];
 services.forEach((service, i) => {
   const port = 4001 + i;
-  
+
   write('services/' + service + '/package.json', JSON.stringify({
     "name": "@flashforge/" + service,
     "version": "1.0.0",
@@ -79,7 +79,7 @@ services.forEach((service, i) => {
   ].join("\n"));
 });
 
-// Remove misplaced files
+
 const misplaced = [
   'packages/shared-config/src/package.json',
   'packages/shared-config/src/tsconfig.json',

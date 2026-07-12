@@ -10,11 +10,11 @@ export async function startWorkers() {
   const rmqUrl = getEnv('RABBITMQ_URL', 'amqp://localhost:5672');
   const { channel } = await connectRabbitMQ({ url: rmqUrl });
 
-  // Process one message at a time per worker — prevents a surge from
-  // overwhelming the service and ensures fair dispatching.
+
+
   channel.prefetch(1);
 
-  // Set up queues (main + retry holding queue + permanent DLQ)
+
   const paymentQueue = await setupQueue('payment.events.queue', ['payment.*']);
   const orderQueue = await setupQueue('order.events.queue', ['order.*']);
 
@@ -34,11 +34,11 @@ export async function startWorkers() {
       if (shouldRetry(msg)) {
         logger.warn({ err, routingKey, attempt: deathCount + 1, maxRetries: MAX_RETRY_ATTEMPTS },
           'Payment message processing failed — will retry after delay');
-        channel.nack(msg, false, false); // → retry queue (TTL delay then re-deliver)
+        channel.nack(msg, false, false);
       } else {
         logger.error({ err, routingKey, deathCount },
           'Payment message exhausted retries — sending to permanent DLQ');
-        channel.nack(msg, false, false); // retry count exceeded → permanent DLQ
+        channel.nack(msg, false, false);
       }
     }
   });

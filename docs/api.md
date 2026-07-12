@@ -3,10 +3,8 @@
 All services follow the same response envelope:
 
 ```json
-// Success
 { "success": true, "data": <T> }
 
-// Error
 { "success": false, "error": { "code": "SNAKE_CASE_CODE", "message": "Human message" } }
 ```
 
@@ -39,7 +37,7 @@ List all products.
 ### `GET /api/products/:id`
 Get a single product by ID.
 
-**Response 200:** Single product object.  
+**Response 200:** Single product object.
 **Response 404:** `{ "error": { "code": "PRODUCT_NOT_FOUND" } }`
 
 ---
@@ -58,8 +56,8 @@ Create a product.
 }
 ```
 
-**Response 201:** Created product.  
-**Response 400:** Validation error.  
+**Response 201:** Created product.
+**Response 400:** Validation error.
 **Response 409:** SKU already exists.
 
 ---
@@ -174,8 +172,8 @@ Orchestrate a checkout. Validates cart, confirms reservation, charges payment, p
 }
 ```
 
-**Response 409:** `OUT_OF_STOCK` — reservation expired.  
-**Response 402:** `PAYMENT_FAILED` — payment declined.  
+**Response 409:** `OUT_OF_STOCK` — reservation expired.
+**Response 402:** `PAYMENT_FAILED` — payment declined.
 **Response 400:** Validation error.
 
 ---

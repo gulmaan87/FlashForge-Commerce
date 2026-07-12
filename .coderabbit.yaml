@@ -1,24 +1,24 @@
-# CodeRabbit configuration for FlashForge Commerce
-# Docs: https://docs.coderabbit.ai/getting-started/configure-coderabbit
 
-# ── Review settings ───────────────────────────────────────────────────────────
+
+
+
 reviews:
-  profile: chill         # "chill" = fewer nits | "assertive" = strict
+  profile: chill
   request_changes_workflow: false
   high_level_summary: true
   poem: false
   review_status: true
   collapse_walkthrough: false
 
-  # Auto-review on every PR
+
   auto_review:
     enabled: true
-    drafts: false         # skip draft PRs
+    drafts: false
     base_branches:
       - master
       - main
 
-  # Which paths to focus on most
+
   path_instructions:
     - path: "services/**"
       instructions: |
@@ -53,7 +53,7 @@ reviews:
         k6 load test scripts. Check for realistic thresholds, proper teardown, and
         whether error rates and p95 latency targets are appropriate for the service.
 
-  # Paths to skip entirely
+
   path_filters:
     - "!**/node_modules/**"
     - "!**/.next/**"
@@ -62,21 +62,21 @@ reviews:
     - "!**/pnpm-lock.yaml"
     - "!**/.terraform/**"
     - "!**/terraform.tfstate*"
-    - "!**/*.tfvars"          # never review secrets files
+    - "!**/*.tfvars"
 
-# ── Chat settings (comment with @coderabbitai) ────────────────────────────────
+
 chat:
   auto_reply: true
 
-# ── Knowledge base (project-specific context) ────────────────────────────────
+
 knowledge_base:
   opt_out: false
   learnings:
     scope: auto
 
-# ── Language-specific linting hints ──────────────────────────────────────────
+
 language:
   typescript:
-    strict: true           # flag any-typed values
+    strict: true
   javascript:
     strict: false

@@ -7,14 +7,14 @@ import { Zap, ArrowRight, Clock, TrendingUp, Shield, Flame, Package, Users } fro
 import { productApi } from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
 
-/* ─── Floating particles (desktop only to preserve perf) ─── */
+
 interface Particle { id: number; x: number; y: number; size: number; delay: number; duration: number; color: string; }
 
 function Particles() {
   const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
-    // Only on non-touch / larger screens
+
     if (window.matchMedia('(hover: none)').matches || window.innerWidth < 768) return;
     const colors = ['#f97316', '#fb923c', '#8b5cf6', '#a78bfa', '#f59e0b'];
     setParticles(Array.from({ length: 18 }, (_, i) => ({
@@ -47,7 +47,7 @@ function Particles() {
   );
 }
 
-/* ─── Glow orb ─── */
+
 function GlowOrb({ color, size, x, y, blur, opacity = 0.12 }: {
   color: string; size: string; x: string; y: string; blur: string; opacity?: number;
 }) {
@@ -60,7 +60,7 @@ function GlowOrb({ color, size, x, y, blur, opacity = 0.12 }: {
   );
 }
 
-/* ─── Countdown ─── */
+
 function CountdownTimer({ seconds }: { seconds: number }) {
   const [timeLeft, setTimeLeft] = useState(seconds);
   useEffect(() => {
@@ -104,7 +104,7 @@ function CountdownTimer({ seconds }: { seconds: number }) {
   );
 }
 
-/* ─── Skeleton ─── */
+
 function SkeletonCard() {
   return (
     <div className="glass-card overflow-hidden">
@@ -119,7 +119,7 @@ function SkeletonCard() {
   );
 }
 
-/* ─── Animated counter ─── */
+
 function AnimatedNumber({ target, suffix = '' }: { target: number; suffix?: string }) {
   const [val, setVal] = useState(0);
   const raf = useRef<number | null>(null);
@@ -137,7 +137,7 @@ function AnimatedNumber({ target, suffix = '' }: { target: number; suffix?: stri
   return <span>{val.toLocaleString()}{suffix}</span>;
 }
 
-/* ─── Page ─── */
+
 export default function HomePage() {
   const { data: products, isLoading, isError } = useQuery({
     queryKey: ['products'],
@@ -153,15 +153,15 @@ export default function HomePage() {
   return (
     <div className="page-wrapper">
 
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  HERO                                                               */}
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {}
+      {}
+      {}
       <section className="relative text-center overflow-hidden" style={{ paddingBlock: 'clamp(3rem, 10vw, 7rem)' }}>
         <Particles />
         <GlowOrb color="#f97316" size="clamp(300px, 50vw, 600px)" x="30%" y="0%" blur="120px" opacity={0.11} />
         <GlowOrb color="#8b5cf6" size="clamp(200px, 35vw, 400px)" x="75%" y="30%" blur="90px" opacity={0.09} />
 
-        {/* Floating shapes — hidden below md */}
+        {}
         <div className="absolute top-10 left-[8%] w-14 h-14 animate-float opacity-20 pointer-events-none hidden md:block" aria-hidden="true">
           <div style={{ width: '100%', height: '100%', border: '2px solid #f97316', borderRadius: 8, transform: 'rotate(20deg)', boxShadow: '0 0 30px rgba(249,115,22,0.3)' }} />
         </div>
@@ -169,13 +169,13 @@ export default function HomePage() {
           <div style={{ width: '100%', height: '100%', border: '2px solid #8b5cf6', borderRadius: '50%', boxShadow: '0 0 20px rgba(139,92,246,0.3)' }} />
         </div>
 
-        {/* ── Content ── */}
+        {}
         <div className="relative z-10" style={{
           opacity: heroVisible ? 1 : 0,
           transform: heroVisible ? 'translateY(0)' : 'translateY(28px)',
           transition: 'all 0.8s cubic-bezier(0.175,0.885,0.32,1.1)',
         }}>
-          {/* Live badge */}
+          {}
           <div
             className="inline-flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full font-semibold"
             style={{
@@ -193,7 +193,7 @@ export default function HomePage() {
             Flash Sales Live Now
           </div>
 
-          {/* Heading — fluid from 2.8rem (xs) to 7rem (xl) */}
+          {}
           <h1
             className="font-display leading-none tracking-tight mb-5"
             style={{ fontSize: 'clamp(2.6rem, 10vw, 7rem)', fontWeight: 900 }}
@@ -217,7 +217,7 @@ export default function HomePage() {
             microservices checkout platform.
           </p>
 
-          {/* CTAs — stack on xs, row on sm+ */}
+          {}
           <div className="flex flex-col xs:flex-row sm:flex-row items-stretch xs:items-center sm:items-center justify-center gap-3 sm:gap-4">
             <a href="#flash-deals" className="btn-accent" style={{ fontSize: 'clamp(0.85rem, 2.5vw, 1rem)', padding: 'clamp(0.7rem, 2vw, 0.875rem) clamp(1.2rem, 4vw, 2rem)' }}>
               <Flame className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="currentColor" />
@@ -229,7 +229,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* Stats row */}
+          {}
           <div
             className="grid grid-cols-3 gap-3 sm:gap-6 mx-auto mt-12"
             style={{ maxWidth: 'min(90%, 22rem)' }}
@@ -250,12 +250,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  FLASH DEALS                                                        */}
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {}
+      {}
+      {}
       <section id="flash-deals" style={{ marginTop: 'clamp(0.5rem, 2vw, 1rem)' }}>
 
-        {/* Timer banner */}
+        {}
         <div
           className="relative overflow-hidden rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8"
           style={{
@@ -289,7 +289,7 @@ export default function HomePage() {
           <CountdownTimer seconds={5 * 3600 + 43 * 60 + 21} />
         </div>
 
-        {/* Section header */}
+        {}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
             <div className="w-1 rounded-full flex-shrink-0" style={{ height: 28, background: 'linear-gradient(180deg, #f97316, #8b5cf6)' }} />
@@ -306,7 +306,7 @@ export default function HomePage() {
           </Link>
         </div>
 
-        {/* Grid — 1 col xs, 2 col sm, 4 col lg */}
+        {}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           {isLoading && [...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
           {isError && (
@@ -321,9 +321,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  FEATURE CARDS                                                      */}
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {}
+      {}
+      {}
       <section
         className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5"
         style={{ marginTop: 'clamp(3rem, 8vw, 5rem)' }}
@@ -355,9 +355,9 @@ export default function HomePage() {
         ))}
       </section>
 
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  MORE PRODUCTS                                                      */}
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {}
+      {}
+      {}
       {moreProducts.length > 0 && (
         <section style={{ marginTop: 'clamp(3rem, 8vw, 5rem)' }}>
           <div className="flex items-center justify-between mb-5 sm:mb-6">
@@ -386,9 +386,9 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      {/*  CTA BANNER                                                         */}
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      {}
+      {}
+      {}
       <section style={{ marginTop: 'clamp(3rem, 8vw, 5rem)' }}>
         <div
           className="relative overflow-hidden rounded-2xl sm:rounded-3xl text-center"

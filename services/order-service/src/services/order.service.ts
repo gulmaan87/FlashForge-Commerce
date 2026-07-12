@@ -9,7 +9,7 @@ export class OrderService {
   }
 
   async createOrder(sessionId: string, userId: string, totalAmount: number, items: { productId: string; quantity: number; price: number }[]) {
-    // Idempotency check via sessionId
+
     const existing = await this.repo.getOrderBySessionId(sessionId);
     if (existing) return existing;
 

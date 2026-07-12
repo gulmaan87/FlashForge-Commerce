@@ -34,7 +34,7 @@ variable "enable_nat_gateway" {
   default     = false
 }
 
-# ── Credentials ────────────────────────────────────────────────────────────────
+
 
 variable "mongo_base_url" {
   description = "MongoDB Atlas cluster base URL (without database name)."
@@ -60,7 +60,7 @@ variable "rabbitmq_url" {
   sensitive   = true
 }
 
-# ── EC2 ────────────────────────────────────────────────────────────────────────
+
 
 variable "ec2_public_key" {
   description = "Contents of your SSH public key (e.g. cat ~/.ssh/flashforge.pub). Used to create AWS Key Pair."

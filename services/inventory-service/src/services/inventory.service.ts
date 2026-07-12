@@ -22,7 +22,7 @@ export class InventoryService {
   }
 
   async reserve(productId: string, quantity: number) {
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
     return this.repo.createReservation({ productId, quantity, expiresAt });
   }
 

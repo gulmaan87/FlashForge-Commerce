@@ -21,7 +21,7 @@ model InventoryReservation {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   productId String
   quantity  Int
-  status    String   // PENDING, CONFIRMED, EXPIRED, RELEASED
+  status    String
   expiresAt DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

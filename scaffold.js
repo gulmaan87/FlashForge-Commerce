@@ -7,7 +7,7 @@ const write = (filePath, content) => {
   fs.writeFileSync(fullPath, content.trim() + '\n', 'utf8');
 };
 
-// 1. shared-types
+
 write('packages/shared-types/package.json', `
 {
   "name": "@flashforge/shared-types",
@@ -64,7 +64,7 @@ export enum OrderStatus {
 }
 `);
 
-// 2. shared-config
+
 write('packages/shared-config/package.json', `
 {
   "name": "@flashforge/shared-config",
@@ -99,7 +99,7 @@ export function getEnv(name: string, fallback?: string): string {
 }
 `);
 
-// 3. shared-logger
+
 write('packages/shared-logger/package.json', `
 {
   "name": "@flashforge/shared-logger",
@@ -138,7 +138,7 @@ export function createLogger(serviceName: string) {
 }
 `);
 
-// 4. shared-metrics
+
 write('packages/shared-metrics/package.json', `
 {
   "name": "@flashforge/shared-metrics",
@@ -167,7 +167,7 @@ write('packages/shared-metrics/src/index.ts', `
 export const METRICS_PREFIX = 'flashforge_';
 `);
 
-// 5. shared-rabbitmq
+
 write('packages/shared-rabbitmq/package.json', `
 {
   "name": "@flashforge/shared-rabbitmq",
@@ -196,7 +196,7 @@ write('packages/shared-rabbitmq/src/index.ts', `
 export const FLASHFORGE_EVENTS_EXCHANGE = 'flashforge.events';
 `);
 
-// 6. Services Boilerplates
+
 const services = ['product-service', 'inventory-service', 'checkout-service', 'payment-service', 'order-service', 'worker-service'];
 services.forEach(service => {
   write(\`services/\${service}/package.json\`, \`
@@ -225,7 +225,7 @@ services.forEach(service => {
   }
 }
   \`);
-  
+
   write(\`services/\${service}/tsconfig.json\`, \`
 {
   "extends": "../../tsconfig.base.json",
@@ -272,7 +272,6 @@ app.listen(PORT, () => {
   \`);
 });
 
-// Remove misplaced files
 const misplaced = [
   'packages/shared-config/src/package.json',
   'packages/shared-config/src/tsconfig.json',

@@ -36,10 +36,10 @@ async function main() {
   await client.connect();
   console.log('Connected to MongoDB.');
 
-  const db = client.db(); // uses db from connection string
+  const db = client.db();
   const col = db.collection('Product');
 
-  // Clear existing products
+
   const deleted = await col.deleteMany({});
   console.log(`Cleared ${deleted.deletedCount} existing products.`);
 

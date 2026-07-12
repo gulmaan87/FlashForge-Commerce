@@ -12,7 +12,7 @@ model Product {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   description String
-  price       Int      // Price in cents
+  price       Int
   sku         String   @unique
   imageUrl    String?
   createdAt   DateTime @default(now())

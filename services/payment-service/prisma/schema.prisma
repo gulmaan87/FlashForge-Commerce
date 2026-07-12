@@ -12,7 +12,7 @@ model PaymentIntent {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   sessionId String   @unique
   amount    Int
-  status    String   // CREATED, PROCESSING, SUCCESS, FAILED
+  status    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

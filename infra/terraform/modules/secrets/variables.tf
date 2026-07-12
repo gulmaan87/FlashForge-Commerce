@@ -18,7 +18,7 @@ variable "rabbitmq_url" {
   sensitive = true
 }
 
-# Map of service name → MongoDB database name
+
 variable "service_db_names" {
   description = "Database name suffix per service."
   type        = map(string)

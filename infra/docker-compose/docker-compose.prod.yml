@@ -1,16 +1,16 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# FlashForge Commerce — Production Docker Compose
-#
-# External services (already cloud-hosted / free):
-#   MongoDB Atlas M0  →  set DATABASE_URL_* per service via environment
-#   Upstash Redis     →  REDIS_URL
-#   CloudAMQP AMQP    →  RABBITMQ_URL
-#
-# Usage on EC2:
-#   export $(cat /etc/flashforge.env | xargs)
-#   docker compose -f docker-compose.prod.yml pull
-#   docker compose -f docker-compose.prod.yml up -d
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 x-service-defaults: &service-defaults
   restart: unless-stopped
@@ -22,7 +22,7 @@ x-service-defaults: &service-defaults
       max-size: "10m"
       max-file: "3"
 
-# ── Common env vars shared by every service ───────────────────────────────────
+
 x-common-env: &common-env
   NODE_ENV: production
   LOG_LEVEL: info
@@ -32,7 +32,7 @@ x-common-env: &common-env
   METRICS_TOKEN: ${METRICS_TOKEN}
 
 services:
-  # ── Reverse proxy ────────────────────────────────────────────────────────
+
   nginx:
     <<: *service-defaults
     image: nginx:1.27-alpine
@@ -48,7 +48,7 @@ services:
       - payment-service
       - order-service
 
-  # ── Microservices ─────────────────────────────────────────────────────────
+
   product-service:
     <<: *service-defaults
     image: ghcr.io/${GHCR_OWNER}/flashforge/product-service:${IMAGE_TAG:-latest}
@@ -142,7 +142,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4006"
-      DATABASE_URL: ${DATABASE_URL_ORDER}   # shares order DB to write orders
+      DATABASE_URL: ${DATABASE_URL_ORDER}
       ORDER_SERVICE_URL: http://order-service:4005/api/orders
       INVENTORY_SERVICE_URL: http://inventory-service:4002/api/inventory
     expose:
@@ -153,14 +153,14 @@ services:
       inventory-service:
         condition: service_healthy
 
-  # ── Frontend ─────────────────────────────────────────────────────────────
+
   frontend:
     <<: *service-defaults
     image: ghcr.io/${GHCR_OWNER}/flashforge/frontend:${IMAGE_TAG:-latest}
     environment:
       NODE_ENV: production
       PORT: "3000"
-      # These are baked in at build time via ARG; set here for clarity
+
       NEXT_PUBLIC_PRODUCT_SERVICE_URL: https://${EC2_PUBLIC_IP:-localhost}/api/products
       NEXT_PUBLIC_CHECKOUT_SERVICE_URL: https://${EC2_PUBLIC_IP:-localhost}/api/checkout
       NEXT_PUBLIC_ORDER_SERVICE_URL: https://${EC2_PUBLIC_IP:-localhost}/api/orders

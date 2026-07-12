@@ -10,18 +10,18 @@ provider "aws" {
   }
 }
 
-# ── VPC ───────────────────────────────────────────────────────────────────────
-# Keep the existing VPC module — one public subnet is all we need (no NAT gateway)
+
+
 module "vpc" {
   source = "./modules/vpc"
 
   name_prefix        = "${var.project_name}-${var.environment}"
   vpc_cidr           = var.vpc_cidr
-  az_count           = 1               # single AZ is free; HA not needed on free tier
-  enable_nat_gateway = false           # NAT = $0.045/hr — we use public subnet
+  az_count           = 1
+  enable_nat_gateway = false
 }
 
-# ── SSM Parameter Store (FREE — replaces Secrets Manager) ─────────────────────
+
 module "ssm" {
   source = "./modules/ssm"
 
@@ -31,7 +31,7 @@ module "ssm" {
   rabbitmq_url   = var.rabbitmq_url
 }
 
-# ── EC2 t2.micro (FREE TIER — replaces ECS Fargate + ALB) ─────────────────────
+
 module "ec2" {
   source = "./modules/ec2"
 
@@ -43,14 +43,14 @@ module "ec2" {
   ghcr_owner       = var.ghcr_owner
 }
 
-# ── CloudFront Distribution (HTTPS) ───────────────────────────────────────────
+
 module "cloudfront" {
   source = "./modules/cloudfront"
 
   origin_domain_name = module.ec2.public_dns
 }
 
-# ── Additional Parameters ─────────────────────────────────────────────────────
+
 resource "aws_ssm_parameter" "cloudfront_domain" {
   name  = "/flashforge/CLOUDFRONT_DOMAIN"
   type  = "String"

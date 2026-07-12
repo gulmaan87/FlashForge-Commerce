@@ -8,20 +8,20 @@ import { createLogger } from '@flashforge/shared-logger';
 
 const logger = createLogger('checkout-service');
 
-// 5-second timeout for all inter-service HTTP calls.
+
 const http = axios.create({ timeout: 5_000 });
 
-// ── Circuit breaker config ────────────────────────────────────────────────────
-// If >50% of calls fail within a 10s window, the breaker opens.
-// After 15s it allows one probe request through. If that succeeds, it closes.
+
+
+
 const BREAKER_OPTIONS: CircuitBreaker.Options = {
-  timeout: 5_000,                  // treat requests >5s as failures
-  errorThresholdPercentage: 50,    // open after 50% failure rate
-  resetTimeout: 15_000,            // try again after 15s
-  volumeThreshold: 5,              // need at least 5 requests before tripping
+  timeout: 5_000,
+  errorThresholdPercentage: 50,
+  resetTimeout: 15_000,
+  volumeThreshold: 5,
 };
 
-// Breaker for inventory reservation calls
+
 const inventoryBreaker = new CircuitBreaker(
   (url: string, body: unknown) => http.post(url, body),
   { ...BREAKER_OPTIONS, name: 'inventory-reservation' },
@@ -33,7 +33,7 @@ inventoryBreaker.on('open',    () => logger.warn('Circuit OPEN: inventory-servic
 inventoryBreaker.on('halfOpen',() => logger.info('Circuit HALF-OPEN: inventory-service — probing'));
 inventoryBreaker.on('close',   () => logger.info('Circuit CLOSED: inventory-service — recovered'));
 
-// Breaker for payment calls (intent creation + confirmation)
+
 const paymentBreaker = new CircuitBreaker(
   (url: string, body: unknown) => http.post(url, body),
   { ...BREAKER_OPTIONS, name: 'payment-service' },
@@ -83,7 +83,7 @@ export class CheckoutService {
 
     const cart = session.cart as unknown as CartItem[];
 
-    // Step 1: Reserve Inventory (via circuit breaker — fails fast if inventory is degraded)
+
     const reservations: string[] = [];
     try {
       for (const item of cart) {
@@ -94,7 +94,7 @@ export class CheckoutService {
         reservations.push(res.data.data.id);
       }
     } catch (err: unknown) {
-      // Rollback all successfully created reservations
+
       for (const resId of reservations) {
         await http
           .post(`${this.inventoryServiceUrl}/reservations/${resId}/release`)
@@ -108,7 +108,7 @@ export class CheckoutService {
       reservationId: reservations.join(','),
     });
 
-    // Step 2: Create Payment Intent (via circuit breaker)
+
     let paymentId: string;
     try {
       const intentRes = await paymentBreaker.fire(`${this.paymentServiceUrl}/intents`, {
@@ -121,7 +121,7 @@ export class CheckoutService {
       throw new Error('Failed to create payment intent');
     }
 
-    // Step 3: Confirm Payment (via circuit breaker)
+
     let paymentSucceeded = false;
     try {
       const confirmRes = await paymentBreaker.fire(`${this.paymentServiceUrl}/confirm`, { sessionId }) as { data: { data: { status: string } } };
@@ -130,9 +130,9 @@ export class CheckoutService {
       logger.error(err, 'Payment confirmation call failed');
     }
 
-    // Step 4: Publish event and update session status
-    // connectRabbitMQ is called once at server startup (server.ts),
-    // so the channel is already available here — no per-request reconnect needed.
+
+
+
     try {
       if (paymentSucceeded) {
         await this.repo.updateSession(sessionId, { status: CheckoutStatus.COMPLETED });
@@ -158,7 +158,7 @@ export class CheckoutService {
       }
     } catch (err) {
       logger.error(err, 'Failed to publish payment event to RabbitMQ');
-      // Don't throw — the payment DB record and session status are already updated
+
     }
 
     return {

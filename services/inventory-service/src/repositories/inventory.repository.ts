@@ -22,7 +22,7 @@ export class InventoryRepository {
         where: { productId: data.productId }
       });
 
-      // Treat a missing inventory record as zero stock — give a clear 409 rather than a 500
+
       const available = item ? item.total - item.reserved : 0;
       if (available < data.quantity) {
         throw new Error('Insufficient stock');
@@ -70,7 +70,7 @@ export class InventoryRepository {
 
       await tx.inventoryItem.update({
         where: { productId: reservation.productId },
-        data: { 
+        data: {
           total: { decrement: reservation.quantity },
           reserved: { decrement: reservation.quantity }
         },

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# ─────────────────────────────────────────────────────────────────────────────
-# bootstrap.sh  —  Create the S3 bucket and DynamoDB table for Terraform remote
-#                  state BEFORE running `terraform init` for the first time.
-#
-# Usage:
-#   export AWS_ACCESS_KEY_ID="AKIA..."
-#   export AWS_SECRET_ACCESS_KEY="..."
-#   export AWS_DEFAULT_REGION="us-east-1"     # must match versions.tf backend region
-#   bash infra/terraform/bootstrap.sh
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+
 set -euo pipefail
 
 BUCKET="flashforge-tf-state"

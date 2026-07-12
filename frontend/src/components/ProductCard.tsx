@@ -66,11 +66,11 @@ export default function ProductCard({ product, isFlash = false, delay = 0 }: Pro
   const { gradient, accent } = getStyle(product.id);
   const imgSrc = product.imageUrl || getProductImage(product.name);
 
-  // Only apply 3D tilt on non-touch devices
+
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     const el = cardRef.current;
     if (!el) return;
-    // Skip on touch devices (touches are handled by :active CSS)
+
     if (window.matchMedia('(hover: none)').matches) return;
     const rect = el.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width  - 0.5;
@@ -95,11 +95,11 @@ export default function ProductCard({ product, isFlash = false, delay = 0 }: Pro
         className="glass-card flex flex-col overflow-hidden cursor-pointer group h-full"
         style={{ transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.3s ease' }}
       >
-        {/* ── Image ── */}
+        {}
         <div
           className="relative overflow-hidden flex-shrink-0"
           style={{
-            /* Fluid image height — shorter on xs, taller on lg */
+
             height: 'clamp(150px, 30vw, 210px)',
             background: gradient,
           }}
@@ -116,7 +116,7 @@ export default function ProductCard({ product, isFlash = false, delay = 0 }: Pro
           )}
           <div className="img-overlay" />
 
-          {/* Flash badge */}
+          {}
           {isFlash && (
             <div className="absolute top-2.5 left-2.5 badge-flash flex items-center gap-1 z-10">
               <Zap className="w-3 h-3" fill="white" />
@@ -124,7 +124,7 @@ export default function ProductCard({ product, isFlash = false, delay = 0 }: Pro
             </div>
           )}
 
-          {/* Discount & hover quick-view */}
+          {}
           {isFlash && (
             <div
               className="absolute top-2.5 right-2.5 text-xs font-bold px-2 py-0.5 rounded-full z-10"
@@ -137,11 +137,11 @@ export default function ProductCard({ product, isFlash = false, delay = 0 }: Pro
             </div>
           )}
 
-          {/* Accent bottom line */}
+          {}
           <div className="absolute bottom-0 left-0 right-0 h-px"
             style={{ background: `linear-gradient(90deg, transparent, ${accent}88, transparent)` }} />
 
-          {/* Hover overlay — hide on touch */}
+          {}
           <div
             className="absolute inset-0 items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 hidden sm:flex"
             style={{ background: 'rgba(0,0,0,0.3)' }}
@@ -154,9 +154,9 @@ export default function ProductCard({ product, isFlash = false, delay = 0 }: Pro
           </div>
         </div>
 
-        {/* ── Info ── */}
+        {}
         <div className="flex flex-col flex-1 gap-2.5" style={{ padding: 'clamp(0.75rem, 2vw, 1rem)' }}>
-          {/* Name & description */}
+          {}
           <div>
             <h3
               className="font-semibold leading-snug line-clamp-2"
@@ -172,7 +172,7 @@ export default function ProductCard({ product, isFlash = false, delay = 0 }: Pro
             </p>
           </div>
 
-          {/* Rating */}
+          {}
           <div className="flex items-center gap-1.5">
             <div className="flex items-center gap-0.5">
               {[...Array(5)].map((_, i) => (
@@ -183,7 +183,7 @@ export default function ProductCard({ product, isFlash = false, delay = 0 }: Pro
             <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>4.0 (128)</span>
           </div>
 
-          {/* Price row */}
+          {}
           <div className="flex items-baseline gap-1.5 flex-wrap">
             <span
               className="font-black leading-none"
@@ -204,7 +204,7 @@ export default function ProductCard({ product, isFlash = false, delay = 0 }: Pro
             )}
           </div>
 
-          {/* Add to cart — always at bottom */}
+          {}
           <button
             onClick={e => { e.stopPropagation(); addItem(product); }}
             className="btn-accent mt-auto w-full justify-center"

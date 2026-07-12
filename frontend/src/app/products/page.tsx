@@ -37,7 +37,7 @@ export default function ProductsPage() {
   return (
     <div className="page-wrapper" style={{ paddingTop: 'clamp(1.5rem, 4vw, 2.5rem)' }}>
 
-      {/* Header */}
+      {}
       <div className="mb-6 sm:mb-8">
         <h1 className="font-display font-bold mb-1.5" style={{ fontSize: 'clamp(1.5rem, 5vw, 2.25rem)' }}>
           All Products
@@ -47,7 +47,7 @@ export default function ProductsPage() {
         </p>
       </div>
 
-      {/* Search + filter bar */}
+      {}
       <div className="flex gap-2 sm:gap-3 mb-6 sm:mb-8">
         <div className="relative flex-1 min-w-0">
           <Search
@@ -63,7 +63,7 @@ export default function ProductsPage() {
             style={{ paddingLeft: 'clamp(2rem, 6vw, 2.5rem)' }}
             aria-label="Search products"
           />
-          {/* Clear button */}
+          {}
           {search && (
             <button
               onClick={() => setSearch('')}
@@ -82,7 +82,7 @@ export default function ProductsPage() {
         </button>
       </div>
 
-      {/* Error */}
+      {}
       {isError && (
         <div className="rounded-xl p-8 text-center"
           style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)', color: 'var(--error)' }}>
@@ -93,7 +93,7 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Product grid — 1 col / 2 col / 3 col / 4 col */}
+      {}
       {!isError && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
           {isLoading && [...Array(8)].map((_, i) => <SkeletonCard key={i} />)}

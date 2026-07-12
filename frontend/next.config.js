@@ -1,6 +1,6 @@
-/** @type {import('next').NextConfig} */
+
 const nextConfig = {
-  // Required for Docker deployment — produces a self-contained server bundle
+
   output: 'standalone',
 
   images: {
